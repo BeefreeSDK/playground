@@ -1,0 +1,1528 @@
+# Beefree SDK Integration Best Practices
+
+This document serves as a comprehensive reference guide for implementing Beefree SDK features. Use this as a knowledge base when working with the Beefree SDK integration in this project.
+
+## Table of Contents
+1. [Export Endpoints (Content Services API)](#export-endpoints-content-services-api)
+2. [Template Catalog API](#template-catalog-api)
+3. [Loading the Beefree SDK](#loading-the-beefree-sdk)
+4. [Loading Templates in the Builder](#loading-templates-in-the-builder)
+5. [onChange and onSave Callbacks](#onchange-and-onsave-callbacks)
+6. [Configuration Toggles](#configuration-toggles)
+7. [HTML Import Functionality](#html-import-functionality)
+8. [Brand Styles API](#brand-styles-api)
+9. [Error Handling](#error-handling)
+10. [TypeScript Best Practices](#typescript-best-practices)
+
+---
+
+## Export Endpoints (Content Services API)
+
+### Overview
+The Content Services API provides endpoints to export Beefree designs to various formats: HTML, Plain Text, PDF, and Image. The key to making these work correctly is understanding the proper request/response flow and data handling.
+
+### Critical Implementation Pattern
+
+**IMPORTANT**: PDF and Image exports require a two-step process:
+1. First convert the template JSON to HTML
+2. Then send the HTML (not JSON) to PDF/Image endpoints
+
+### HTML Export
+
+**Endpoint**: `POST /v1/message/html`
+
+**Request Body**: Send the template JSON directly
+```javascript
+{
+  // Template JSON structure (the entire template object)
+  page: { ... }
+}
+```
+
+**Response Handling**: The API may return either plain HTML text or JSON-wrapped HTML. Always handle both cases:
+```javascript
+const raw = await response.text();
+let html = raw;
+try {
+  const maybeJson = JSON.parse(raw);
+  const candidate = (maybeJson && maybeJson.body && (maybeJson.body.html || maybeJson.body.result || maybeJson.body)) || undefined;
+  if (typeof candidate === 'string') {
+    html = candidate;
+  }
+} catch {}
+// html now contains the actual HTML string
+```
+
+**Backend (proxy-server.js)**:
+```javascript
+app.post('/v1/message/html', async (req, res) => {
+  await forwardPost('https://api.getbee.io/v1/message/html', req, res);
+});
+```
+
+### Plain Text Export
+
+**Endpoint**: `POST /v1/message/plain-text`
+
+**Request Body**: Send the template JSON directly
+```javascript
+{
+  // Template JSON structure
+  page: { ... }
+}
+```
+
+**Response Handling**: Returns plain text directly
+```javascript
+const text = await response.text();
+// text is the plain text version
+```
+
+**Backend (proxy-server.js)**:
+```javascript
+app.post('/v1/message/plain-text', async (req, res) => {
+  await forwardPost('https://api.getbee.io/v1/message/plain-text', req, res);
+});
+```
+
+### PDF Export
+
+**Endpoint**: `POST /v1/message/pdf`
+
+**CRITICAL**: PDF export requires HTML, not JSON!
+
+**Request Body**: 
+```javascript
+{
+  page_size: 'Full',           // or 'A4', 'Letter', etc.
+  page_orientation: 'landscape', // or 'portrait'
+  html: '<html>...</html>'     // The HTML from HTML export
+}
+```
+
+**Frontend Flow**:
+```javascript
+const handleGetPdf = async () => {
+  // Step 1: Ensure HTML exists (convert first if needed)
+  if (!lastHtmlRef.current) {
+    alert('Convert template to HTML first');
+    return;
+  }
+  
+  // Step 2: Send HTML to PDF endpoint
+  const response = await fetch('/v1/message/pdf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      page_size: 'Full',
+      page_orientation: 'landscape',
+      html: lastHtmlRef.current
+    }),
+  });
+  
+  // Step 3: Extract URL from nested response
+  const data = await response.json();
+  const url = data && data.body && data.body.url ? data.body.url : undefined;
+  // url is the PDF download link
+};
+```
+
+**Backend (proxy-server.js)**:
+```javascript
+app.post('/v1/message/pdf', async (req, res) => {
+  await forwardPost('https://api.getbee.io/v1/message/pdf', req, res);
+});
+```
+
+### Image Export
+
+**Endpoint**: `POST /v1/message/image`
+
+**CRITICAL**: Image export requires HTML, not JSON! Returns binary data (arraybuffer).
+
+**Request Body**:
+```javascript
+{
+  file_type: 'png',      // or 'jpg'
+  size: '1000',          // width in pixels
+  html: '<html>...</html>' // The HTML from HTML export
+}
+```
+
+**Frontend Flow**:
+```javascript
+const handleGetImage = async () => {
+  // Step 1: Ensure HTML exists
+  if (!lastHtmlRef.current) {
+    alert('Convert template to HTML first');
+    return;
+  }
+  
+  // Step 2: Send HTML to image endpoint
+  const response = await fetch('/v1/message/image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      file_type: 'png',
+      size: '1000',
+      html: lastHtmlRef.current
+    }),
+  });
+  
+  // Step 3: Handle binary response
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  // url can be used in <img src={url} />
+};
+```
+
+**Backend (proxy-server.js)**:
+```javascript
+// Image returns binary, so use responseType: 'arraybuffer'
+app.post('/v1/message/image', async (req, res) => {
+  await forwardPost('https://api.getbee.io/v1/message/image', req, res, 'arraybuffer');
+});
+```
+
+### Backend Helper Function
+
+Use a centralized helper function to forward requests to the Content Services API:
+
+```javascript
+const forwardPost = async (targetUrl, req, res, responseType = 'json') => {
+  if (!CS_AUTH) {
+    res.status(500).json({ error: 'CS_API_TOKEN is not configured' });
+    return;
+  }
+  try {
+    const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    const response = await axios.post(targetUrl, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': CS_AUTH
+      },
+      responseType
+    });
+
+    if (responseType === 'arraybuffer') {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Disposition', 'inline');
+      res.status(200).send(response.data);
+      return;
+    }
+    res.status(200).send(response.data);
+  } catch (error) {
+    const details = (error && error.response && error.response.data) || error.message || 'Unknown error';
+    console.error('CS API forward error:', details);
+    res.status(500).json({ message: `Error exporting from ${targetUrl}`, details });
+  }
+};
+```
+
+### Authorization Header
+
+Always ensure the CS_API_TOKEN includes the "Bearer " prefix:
+
+```javascript
+const RAW_CS_TOKEN = process.env.CS_API_TOKEN || '';
+const CS_AUTH = RAW_CS_TOKEN.startsWith('Bearer ') ? RAW_CS_TOKEN : (RAW_CS_TOKEN ? `Bearer ${RAW_CS_TOKEN}` : '');
+```
+
+---
+
+## Template Catalog API
+
+### Authentication
+Template Catalog API uses Bearer token authentication:
+
+```javascript
+headers: {
+  'Authorization': `Bearer ${TEMPLATE_CATALOG_API_TOKEN}`,
+  'Content-Type': 'application/json'
+}
+```
+
+### Get Templates with Filters
+
+**Endpoint**: `GET /v1/catalog/templates`
+
+**Query Parameters**:
+- `category` - Filter by category ID
+- `collection` - Filter by collection ID
+- `designer` - Filter by designer ID
+- `tag` - Filter by tag
+- `limit` - Number of results (default: 20)
+- `offset` - Pagination offset (default: 0)
+
+**Example Implementation**:
+```javascript
+app.get('/templates', async (req, res) => {
+  try {
+    if (!TEMPLATE_CATALOG_API_TOKEN) {
+      return res.status(500).json({ error: 'Template Catalog API Token not configured' });
+    }
+
+    const { category, collection, designer, tag, limit = 20, offset = 0 } = req.query;
+    
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (collection) params.append('collection', collection);
+    if (designer) params.append('designer', designer);
+    if (tag) params.append('tag', tag);
+    if (limit) params.append('limit', limit);
+    if (offset) params.append('offset', offset);
+    
+    const response = await axios.get(
+      `https://api.getbee.io/v1/catalog/templates?${params.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${TEMPLATE_CATALOG_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    res.json(response.data);
+  } catch (error) {
+    console.error('Template catalog error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch templates' });
+  }
+});
+```
+
+### Get Single Template
+
+**Endpoint**: `GET /v1/catalog/templates/:id`
+
+```javascript
+app.get('/templates/:id', async (req, res) => {
+  const { id } = req.params;
+  const response = await axios.get(
+    `https://api.getbee.io/v1/catalog/templates/${id}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${TEMPLATE_CATALOG_API_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+  res.json(response.data);
+});
+```
+
+### Get Categories, Collections, Designers, Tags
+
+Follow the same pattern for metadata endpoints:
+
+```javascript
+// Categories
+app.get('/categories', async (req, res) => {
+  const response = await axios.get(
+    'https://api.getbee.io/v1/catalog/categories',
+    { headers: { 'Authorization': `Bearer ${TEMPLATE_CATALOG_API_TOKEN}` } }
+  );
+  res.json(response.data);
+});
+
+// Collections
+app.get('/collections', async (req, res) => { /* same pattern */ });
+
+// Designers
+app.get('/designers', async (req, res) => { /* same pattern */ });
+
+// Tags
+app.get('/tags', async (req, res) => { /* same pattern */ });
+```
+
+---
+
+## Loading the Beefree SDK
+
+### Initialization Method: `.start()`
+
+**IMPORTANT**: Use the `.start()` method, not `.create()`, especially in React applications. The `.start()` method is the recommended approach for initializing the Beefree SDK.
+
+### Step 1: Include SDK Script
+
+Add the Beefree SDK script to your HTML:
+
+```html
+<script src="https://app-rsrc.getbee.io/plugin/BeePlugin.js"></script>
+```
+
+### Step 2: Get Authentication Token
+
+Before initializing the SDK, obtain a token using the LoginV2 endpoint:
+
+```javascript
+const getAuthToken = async (uid = 'demo-user') => {
+  const response = await fetch('/proxy/bee-auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uid })
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to authenticate');
+  }
+  
+  const data = await response.json();
+  return data.token; // or data.access_token depending on response structure
+};
+```
+
+### Step 3: Initialize with `.start()`
+
+```javascript
+const initializeBeeEditor = async (container, template, config) => {
+  const token = await getAuthToken();
+  
+  const beeConfig = {
+    uid: 'demo-user',
+    container: container, // DOM element or selector
+    autosave: false,
+    language: 'en-US',
+    ...config // Any additional config options
+  };
+  
+  // Use .start() method
+  const beeInstance = await window.BeePlugin.start(token, beeConfig, template);
+  
+  return beeInstance;
+};
+```
+
+### Step 4: React Implementation
+
+In React, initialize in `useEffect`:
+
+```javascript
+import { useEffect, useRef, useState } from 'react';
+
+function BeefreeEditor({ initialJson, onJsonChange, beeConfig }) {
+  const containerRef = useRef(null);
+  const beeInstanceRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    let mounted = true;
+    
+    const initEditor = async () => {
+      if (!window.BeePlugin || !containerRef.current || !initialJson) {
+        return;
+      }
+      
+      try {
+        const token = await getAuthToken();
+        
+        const config = {
+          uid: 'demo-user',
+          container: containerRef.current,
+          autosave: false,
+          language: 'en-US',
+          onSave: (jsonFile) => {
+            onJsonChange?.(jsonFile);
+          },
+          onChange: (jsonFile) => {
+            onJsonChange?.(jsonFile);
+          },
+          ...beeConfig
+        };
+        
+        // Use .start() method - the preferred initialization approach
+        const bee = await window.BeePlugin.start(token, config, initialJson);
+        
+        if (mounted) {
+          beeInstanceRef.current = bee;
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Failed to initialize Beefree editor:', error);
+        setIsLoading(false);
+      }
+    };
+    
+    initEditor();
+    
+    return () => {
+      mounted = false;
+      // Note: BeePlugin doesn't have a standard destroy method
+    };
+  }, [initialJson, beeConfig]);
+  
+  return (
+    <div style={{ width: '100%', height: '100vh' }}>
+      {isLoading && <div>Loading editor...</div>}
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
+}
+```
+
+### Authentication Backend Endpoint
+
+```javascript
+app.post('/proxy/bee-auth', async (req, res) => {
+  try {
+    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    const uid = body.uid || 'demo-user';
+    
+    const response = await axios.post(
+      'https://auth.getbee.io/loginV2',
+      {
+        client_id: BEE_CLIENT_ID,
+        client_secret: BEE_CLIENT_SECRET,
+        uid
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    
+    res.json(response.data);
+  } catch (error) {
+    const message = (error && error.response && error.response.data) || error.message || 'Unknown error';
+    console.error('Auth error:', message);
+    res.status(500).json({ error: 'Failed to authenticate', details: message });
+  }
+});
+```
+
+---
+
+## Loading Templates in the Builder
+
+### Method 1: Initial Load with `.start()`
+
+When using `.start()`, pass the template as the third parameter:
+
+```javascript
+const bee = await window.BeePlugin.start(token, config, templateJson);
+```
+
+### Method 2: Load Template After Initialization
+
+To load a new template after the editor is already initialized:
+
+```javascript
+// Store the bee instance reference
+const loadNewTemplate = async (templateJson) => {
+  if (beeInstanceRef.current) {
+    await beeInstanceRef.current.load(templateJson);
+  }
+};
+```
+
+### Handling Template Selection
+
+```javascript
+const handleTemplateSelect = async (templateId) => {
+  try {
+    // Fetch template from Template Catalog API
+    const response = await fetch(`/api/templates/${templateId}`);
+    const templateData = await response.json();
+    
+    // Load into editor
+    if (beeInstanceRef.current) {
+      await beeInstanceRef.current.load(templateData);
+      setCurrentJson(templateData);
+    }
+  } catch (error) {
+    console.error('Failed to load template:', error);
+    alert('Failed to load template');
+  }
+};
+```
+
+### Template JSON Structure
+
+Templates should follow this basic structure:
+
+```javascript
+{
+  "page": {
+    "body": {
+      "container": {
+        "style": {
+          "background-color": "#fff"
+        }
+      },
+      "content": {
+        "computedStyle": {
+          "linkColor": "#0000EE",
+          "messageBackgroundColor": "transparent",
+          "messageWidth": "650px"
+        }
+      }
+    },
+    "rows": [
+      // Row objects with columns and modules
+    ]
+  }
+}
+```
+
+---
+
+## onChange and onSave Callbacks
+
+### Overview
+The Beefree SDK provides `onChange` and `onSave` callbacks to track template modifications. These callbacks require `trackChanges: true` in the beeConfig.
+
+### Critical Requirement: trackChanges
+
+**IMPORTANT**: `trackChanges: true` must be set in beeConfig for `onChange` callback to work.
+
+```typescript
+const beeConfig: BeefreeConfig = {
+  container: 'beefree-react-demo',
+  language: 'en-US',
+  trackChanges: true, // REQUIRED for onChange callback
+  // ... other config
+};
+```
+
+### onChange Callback
+
+**Purpose**: Fired whenever user makes changes in the editor (real-time tracking)
+
+**Parameters**:
+- `jsonFile: string | BeefreeTemplateJson` - Updated template JSON (may be string or object)
+- `response?: ChangeResponse` - Optional change details
+
+**Implementation**:
+```typescript
+onChange: (jsonFile: string | BeefreeTemplateJson, response?: ChangeResponse) => {
+  const templateData = typeof jsonFile === 'string' ? JSON.parse(jsonFile) : jsonFile;
+  
+  // Log template JSON to browser console for debugging
+  console.log('📝 onChange - Template JSON:', templateData);
+  if (response) {
+    console.log('📝 onChange - Change details:', response);
+  }
+  
+  // Update ref with latest template state (used for exports, etc.)
+  currentTemplateRef.current = templateData;
+  
+  // Notify parent components
+  if (onJsonChange) {
+    onJsonChange(templateData);
+  }
+}
+```
+
+### onSave Callback
+
+**Purpose**: Fired when user saves the template
+
+**Parameters**:
+- `jsonFile: string` - Template JSON as string
+- `htmlFile?: string` - Generated HTML (optional)
+- `ampHtml?: string` - AMP HTML version (optional)
+- `templateVersion?: number` - Template version number (optional)
+- `language?: string` - Template language (optional)
+
+**Implementation**:
+```typescript
+onSave: (
+  jsonFile: string, 
+  htmlFile?: string, 
+  ampHtml?: string, 
+  templateVersion?: number, 
+  language?: string
+) => {
+  const parsedJson = typeof jsonFile === 'string' ? JSON.parse(jsonFile) : jsonFile;
+  
+  // Log the template JSON to browser console
+  console.log('💾 onSave - Template JSON:', parsedJson);
+  if (htmlFile) {
+    console.log('💾 onSave - HTML:', htmlFile);
+  }
+  if (templateVersion !== undefined) {
+    console.log('💾 onSave - Version:', templateVersion);
+  }
+  if (language) {
+    console.log('💾 onSave - Language:', language);
+  }
+  
+  // Update state
+  if (onJsonChange) {
+    onJsonChange(parsedJson);
+  }
+}
+```
+
+### Best Practices
+
+1. **Always enable trackChanges** when using onChange callback
+2. **Parse jsonFile** - It may be a string or object, handle both cases
+3. **Update refs** - Use refs (not state) for operations that need the latest template
+4. **Console logging** - Log template JSON for debugging (as shown above)
+5. **Type safety** - Use proper TypeScript types (`BeefreeTemplateJson`, `ChangeResponse`)
+
+---
+
+## Configuration Toggles
+
+### Overview
+Configuration toggles allow users to dynamically modify beeConfig properties. These toggles auto-apply changes without requiring manual "Apply" button clicks.
+
+### Available Toggles
+
+1. **Apply Custom CSS** - Adds/removes `customCss` property
+2. **Move Sidebar** - Toggles `sidebarPosition` between "left" and "right"
+3. **Group Content Tiles** - Adds/removes `modulesGroups` configuration
+
+### Implementation Pattern
+
+All toggles follow the same pattern using window functions for cross-component communication:
+
+**Step 1: Expose window function in BeeConfigSidebar**
+```typescript
+interface WindowWithToggleFunctions extends Window {
+  toggleCustomCss?: (enabled: boolean) => void;
+  toggleMoveSidebar?: (enabled: boolean) => void;
+  toggleGroupContentTiles?: (enabled: boolean) => void;
+}
+
+useEffect(() => {
+  const win = window as WindowWithToggleFunctions;
+  
+  win.toggleCustomCss = (enabled: boolean) => {
+    const currentConfig: BeefreeConfig = configText ? JSON.parse(configText) : { container: 'beefree-react-demo' };
+    
+    if (enabled) {
+      currentConfig.customCss = "https://zairro.github.io/beefree-custom-css/beefree-custom-design.css";
+    } else {
+      delete currentConfig.customCss;
+    }
+    
+    const newConfigText = JSON.stringify(currentConfig, null, 2);
+    setConfigText(newConfigText);
+    onConfigChange(currentConfig); // Auto-apply
+  };
+  
+  // Cleanup on unmount
+  return () => {
+    delete win.toggleCustomCss;
+  };
+}, [configText, onConfigChange]);
+```
+
+**Step 2: Call from TemplateTopBar**
+```typescript
+const handleCustomCssToggle = (enabled: boolean) => {
+  const win = window as WindowWithToggleFunctions;
+  if (win.toggleCustomCss) {
+    win.toggleCustomCss(enabled);
+  }
+};
+```
+
+### Custom CSS Toggle
+
+**Property**: `customCss: string`
+
+**When enabled**: Adds external CSS URL to beeConfig
+**When disabled**: Removes `customCss` property
+
+```typescript
+// Enabled
+{
+  container: 'beefree-react-demo',
+  customCss: "https://zairro.github.io/beefree-custom-css/beefree-custom-design.css"
+}
+
+// Disabled
+{
+  container: 'beefree-react-demo'
+}
+```
+
+### Move Sidebar Toggle
+
+**Property**: `sidebarPosition: 'left' | 'right'`
+
+**When enabled**: Sets `sidebarPosition` to `"right"`
+**When disabled**: Sets `sidebarPosition` to `"left"` (default)
+
+```typescript
+win.toggleMoveSidebar = (enabled: boolean) => {
+  const currentConfig: BeefreeConfig = configText ? JSON.parse(configText) : { container: 'beefree-react-demo' };
+  
+  if (enabled) {
+    currentConfig.sidebarPosition = "right";
+  } else {
+    currentConfig.sidebarPosition = "left";
+  }
+  
+  const newConfigText = JSON.stringify(currentConfig, null, 2);
+  setConfigText(newConfigText);
+  onConfigChange(currentConfig);
+};
+```
+
+### Group Content Tiles Toggle
+
+**Property**: `modulesGroups: ModuleGroup[]`
+
+**When enabled**: Adds `modulesGroups` array with module organization
+**When disabled**: Removes `modulesGroups` property
+
+**Module Groups Structure**:
+```typescript
+modulesGroups: [
+  {
+    label: "Text",
+    collapsable: false,
+    collapsedOnLoad: false,
+    modulesNames: ["List", "Paragraph", "Heading"]
+  },
+  {
+    label: "Media",
+    collapsable: true,
+    collapsedOnLoad: false,
+    modulesNames: ["Video", "Image", "Icons"]
+  },
+  {
+    label: "Calls to Action",
+    collapsable: true,
+    collapsedOnLoad: false,
+    modulesNames: ["Button", "Social"]
+  },
+  {
+    label: "Styling",
+    collapsable: true,
+    collapsedOnLoad: false,
+    modulesNames: ["Divider", "Spacer"]
+  },
+  {
+    label: "Advanced",
+    collapsable: true,
+    collapsedOnLoad: true,
+    modulesNames: ["Table", "Html", "Menu"]
+  }
+]
+```
+
+**Implementation**:
+```typescript
+win.toggleGroupContentTiles = (enabled: boolean) => {
+  const currentConfig: BeefreeConfig = configText ? JSON.parse(configText) : { container: 'beefree-react-demo' };
+  
+  if (enabled) {
+    currentConfig.modulesGroups = [
+      // ... module groups array as shown above
+    ];
+  } else {
+    delete currentConfig.modulesGroups;
+  }
+  
+  const newConfigText = JSON.stringify(currentConfig, null, 2);
+  setConfigText(newConfigText);
+  onConfigChange(currentConfig);
+};
+```
+
+### Best Practices
+
+1. **Auto-apply changes** - Call `onConfigChange` immediately (no manual "Apply" needed)
+2. **Update textarea** - Show changes in JSON editor for transparency
+3. **Type safety** - Use `BeefreeConfig` type for config objects
+4. **Cleanup** - Remove window functions on component unmount
+5. **Error handling** - Wrap in try-catch for JSON parsing errors
+
+---
+
+## HTML Import Functionality
+
+### Overview
+The HTML Importer API converts raw HTML into Beefree-compatible JSON format.
+
+### Frontend Implementation
+
+```javascript
+const handleHtmlImport = async (html) => {
+  try {
+    const response = await fetch('/v1/html-importer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Failed to import HTML' }));
+      throw new Error(errorData.error || 'Failed to import HTML');
+    }
+
+    const importedData = await response.json();
+    
+    // Load the imported template into the editor
+    if (beeInstanceRef.current) {
+      await beeInstanceRef.current.load(importedData);
+      setCurrentJson(importedData);
+    }
+  } catch (error) {
+    console.error('HTML import error:', error);
+    throw new Error(error.message || 'Failed to import HTML');
+  }
+};
+```
+
+### HTML Import Modal Component
+
+```javascript
+function HtmlImportModal({ isOpen, onClose, onImport }) {
+  const [html, setHtml] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const handleImport = async () => {
+    if (!html.trim()) {
+      setError('Please paste HTML content');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      await onImport(html);
+      onClose();
+      setHtml('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Import HTML</h2>
+        <textarea
+          value={html}
+          onChange={(e) => setHtml(e.target.value)}
+          placeholder="Paste your HTML here..."
+          rows={15}
+          style={{ width: '100%', fontFamily: 'monospace' }}
+        />
+        {error && <div className="error">{error}</div>}
+        <div className="modal-actions">
+          <button onClick={handleImport} disabled={loading}>
+            {loading ? 'Importing...' : 'Import'}
+          </button>
+          <button onClick={onClose} disabled={loading}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### Backend Implementation
+
+**CRITICAL**: The HTML Importer API endpoint is:
+- `POST https://api.getbee.io/v1/conversion/html-to-json`
+- Content-Type: `text/html`
+- Authorization: `Bearer ${HTML_IMPORTER_API_KEY}`
+
+```javascript
+app.post('/v1/html-importer', async (req, res) => {
+  try {
+    if (!HTML_IMPORTER_API_KEY) {
+      return res.status(500).json({ error: 'HTML Importer API Key not configured' });
+    }
+
+    const { html } = req.body;
+    
+    if (!html || typeof html !== 'string') {
+      return res.status(400).json({ error: 'HTML content is required' });
+    }
+
+    // Basic HTML sanitization
+    const sanitizedHtml = html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // Remove iframe tags
+      .replace(/on\w+="[^"]*"/gi, '') // Remove event handlers
+      .replace(/javascript:/gi, '') // Remove javascript: URLs
+      .trim();
+
+    if (sanitizedHtml.length > 500000) { // 500KB limit
+      return res.status(413).json({ error: 'HTML content too large (max 500KB)' });
+    }
+
+    const response = await axios.post(
+      'https://api.getbee.io/v1/conversion/html-to-json',
+      sanitizedHtml,
+      {
+        headers: {
+          'Authorization': `Bearer ${HTML_IMPORTER_API_KEY}`,
+          'Content-Type': 'text/html'
+        },
+        timeout: 30000,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('HTML import error:', error.response?.data || error.message);
+    
+    if (error.response?.status === 413) {
+      res.status(413).json({ error: 'HTML content too large' });
+    } else if (error.response?.status === 422) {
+      res.status(422).json({ 
+        error: 'Invalid HTML format: ' + (error.response?.data?.message || 'Please check the HTML content') 
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Failed to import HTML: ' + (error.response?.data?.message || error.message) 
+      });
+    }
+  }
+});
+```
+
+---
+
+## Brand Styles API
+
+### Overview
+The Brand Styles API applies consistent branding (fonts, colors, etc.) to templates.
+
+### Brand Styles Object Structure
+
+```javascript
+const brandStyles = {
+  fonts: {
+    primary: {
+      name: 'Arial',
+      fontFamily: 'Arial, sans-serif'
+    },
+    secondary: {
+      name: 'Georgia',
+      fontFamily: 'Georgia, serif'
+    }
+  },
+  colors: {
+    primary: '#8B5CF6',
+    secondary: '#3B82F6',
+    text: '#1F2937',
+    background: '#FFFFFF'
+  }
+};
+```
+
+### Frontend Implementation
+
+```javascript
+const handleApplyBrandStyles = async (brandStyles) => {
+  try {
+    if (!currentJson) {
+      throw new Error('No template loaded');
+    }
+    
+    const response = await fetch('/apply-brand-styles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        styles: brandStyles,
+        template: currentJson
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to apply brand styles');
+    }
+    
+    const styledTemplate = await response.json();
+    
+    // Load the styled template into the editor
+    if (beeInstanceRef.current) {
+      await beeInstanceRef.current.load(styledTemplate);
+      setCurrentJson(styledTemplate);
+    }
+  } catch (error) {
+    console.error('Brand styles error:', error);
+    throw error;
+  }
+};
+```
+
+### Backend Implementation
+
+```javascript
+app.post('/apply-brand-styles', async (req, res) => {
+  try {
+    const { styles, template } = req.body;
+    
+    if (!BRAND_STYLE_API_TOKEN) {
+      return res.status(500).json({ error: 'Brand Style API Token not configured' });
+    }
+    
+    const payload = {
+      styles: styles,
+      template: template,
+      html: false  // Set to true if you also want HTML in the response
+    };
+    
+    const response = await axios.post(
+      'https://api.getbee.io/v1/template/brand',
+      payload,
+      {
+        headers: {
+          'Authorization': `Bearer ${BRAND_STYLE_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      }
+    );
+    
+    // Return the styled template JSON
+    res.json(response.data.json || response.data);
+  } catch (error) {
+    console.error('Brand styles error:', error.response?.data || error.message);
+    
+    if (error.response?.status === 413) {
+      res.status(413).json({ error: 'Template data too large' });
+    } else if (error.response?.status === 422) {
+      res.status(422).json({ 
+        error: 'Invalid request format: ' + (error.response?.data?.message || 'Check template and styles format') 
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Failed to apply brand styles: ' + (error.response?.data?.message || error.message) 
+      });
+    }
+  }
+});
+```
+
+---
+
+## Error Handling
+
+### General Principles
+
+1. **Always validate configuration** before making API calls
+2. **Use try-catch blocks** for async operations
+3. **Provide user-friendly error messages** with `alert()` for critical failures
+4. **Log detailed errors** to console for debugging
+5. **Handle network failures gracefully**
+
+### Frontend Error Handling Pattern
+
+```javascript
+const handleApiCall = async () => {
+  setLoading(true);
+  setError('');
+  
+  try {
+    const response = await fetch('/api/endpoint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      // User-friendly alert for failed operations
+      alert('Operation failed');
+      return;
+    }
+    
+    const result = await response.json();
+    // Handle success
+  } catch (err) {
+    // Detailed error for debugging
+    console.error('API call error:', err);
+    setError('An error occurred: ' + err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+### Backend Error Handling Pattern
+
+```javascript
+app.post('/api/endpoint', async (req, res) => {
+  try {
+    // Validate configuration
+    if (!API_TOKEN) {
+      return res.status(500).json({ error: 'API token not configured' });
+    }
+    
+    // Validate request
+    if (!req.body.requiredField) {
+      return res.status(400).json({ error: 'Required field missing' });
+    }
+    
+    // Make API call
+    const response = await axios.post(EXTERNAL_API_URL, req.body, {
+      headers: {
+        'Authorization': `Bearer ${API_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    res.json(response.data);
+  } catch (error) {
+    console.error('API error:', error.response?.data || error.message);
+    
+    // Handle specific error codes
+    if (error.response?.status === 413) {
+      res.status(413).json({ error: 'Payload too large' });
+    } else if (error.response?.status === 422) {
+      res.status(422).json({ error: 'Invalid request format' });
+    } else if (error.code === 'ECONNABORTED') {
+      res.status(408).json({ error: 'Request timeout' });
+    } else {
+      res.status(500).json({ 
+        error: 'Operation failed',
+        details: error.response?.data?.message || error.message
+      });
+    }
+  }
+});
+```
+
+---
+
+## Environment Variables
+
+Always use environment variables for sensitive data:
+
+```bash
+# Beefree SDK Authentication
+BEE_CLIENT_ID=your_client_id
+BEE_CLIENT_SECRET=your_client_secret
+
+# Template Catalog API
+TEMPLATE_CATALOG_API_TOKEN=your_catalog_token
+
+# Content Services API
+CS_API_TOKEN=your_cs_token
+
+# Brand Styles API
+BRAND_STYLE_API_TOKEN=your_brand_token
+
+# HTML Importer API
+HTML_IMPORTER_API_KEY=your_importer_key
+```
+
+---
+
+## Quick Reference: API Endpoints
+
+| Feature | Endpoint | Method | Input | Output |
+|---------|----------|--------|-------|--------|
+| HTML Export | `/v1/message/html` | POST | Template JSON | HTML string (may be wrapped in JSON) |
+| Plain Text Export | `/v1/message/plain-text` | POST | Template JSON | Plain text string |
+| PDF Export | `/v1/message/pdf` | POST | HTML + params | JSON with URL |
+| Image Export | `/v1/message/image` | POST | HTML + params | Binary (PNG/JPG) |
+| Get Templates | `/v1/catalog/templates` | GET | Query params | Templates array |
+| Get Template | `/v1/catalog/templates/:id` | GET | Template ID | Template JSON |
+| Brand Styles | `/v1/template/brand` | POST | Template + styles | Styled template JSON |
+| HTML Import | `/v1/conversion/html-to-json` | POST | HTML string (text/html) | Template JSON |
+| Auth (LoginV2) | `https://auth.getbee.io/loginV2` | POST | client_id, client_secret, uid | Token |
+
+---
+
+## Code Style Preferences
+
+1. **Use async/await** instead of mixing with `.then()` promise syntax
+2. **Initialize Beefree SDK with `.start()`** method, not `.create()`
+3. **Always validate** required data before API calls
+4. **Use alert()** for user-facing error messages on failed operations
+5. **Console.log errors** for debugging purposes
+6. **Handle both JSON and text responses** when appropriate (e.g., HTML export)
+7. **Use TypeScript types** - Avoid `any`, use proper interfaces
+8. **Use CSS variables** - Prefer `var(--color-name)` over hardcoded colors
+9. **Error handling** - Use `err: unknown` with type guards (`err instanceof Error`)
+
+---
+
+## TypeScript Best Practices
+
+### Avoid `any` Type
+
+**❌ Bad:**
+```typescript
+const handleTemplate = (template: any) => {
+  // ...
+};
+```
+
+**✅ Good:**
+```typescript
+import type { TemplateData, BeefreeTemplateJson } from './types';
+
+const handleTemplate = (template: TemplateData) => {
+  // ...
+};
+```
+
+### Proper Error Handling
+
+**❌ Bad:**
+```typescript
+catch (err: any) {
+  console.error('Error:', err.message);
+}
+```
+
+**✅ Good:**
+```typescript
+catch (err: unknown) {
+  const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+  console.error('Error:', err);
+  alert('Operation failed: ' + errorMessage);
+}
+```
+
+### Window Function Type Safety
+
+**❌ Bad:**
+```typescript
+(window as any).loadTemplate = (data: any) => {
+  // ...
+};
+```
+
+**✅ Good:**
+```typescript
+interface WindowWithBeefreeFunctions extends Window {
+  loadTemplate?: (templateData: BeefreeTemplateJson) => Promise<void>;
+  restartEditor?: () => void;
+}
+
+const win = window as WindowWithBeefreeFunctions;
+win.loadTemplate = async (templateData: BeefreeTemplateJson) => {
+  // ...
+};
+```
+
+### Type Definitions
+
+Create proper type definitions in `src/types/beefree.ts`:
+
+```typescript
+export interface BeefreeTemplateJson {
+  page: {
+    body: {
+      container?: { style?: Record<string, string> };
+      content?: { computedStyle?: Record<string, string> };
+    };
+    rows?: BeefreeRow[];
+  };
+}
+
+export interface BeefreeConfig {
+  container: string;
+  language?: string;
+  sidebarPosition?: 'left' | 'right';
+  trackChanges?: boolean;
+  customCss?: string;
+  modulesGroups?: ModuleGroup[];
+  [key: string]: unknown;
+}
+
+export interface ModuleGroup {
+  label: string;
+  collapsable: boolean;
+  collapsedOnLoad: boolean;
+  modulesNames: string[];
+}
+```
+
+### CSS Variables
+
+**❌ Bad:**
+```css
+.button {
+  background-color: #8B5CF6;
+  color: #374151;
+}
+```
+
+**✅ Good:**
+```css
+.button {
+  background-color: var(--beefree-purple);
+  color: var(--text-primary);
+}
+```
+
+Define CSS variables in root:
+```css
+:root {
+  --beefree-purple: #7747FF;
+  --text-primary: #1F2937;
+  --bg-primary: #FFFFFF;
+  --border-color: #E1E4E8;
+}
+```
+
+---
+
+## State Management Best Practices
+
+### Template State Synchronization
+
+When implementing multiple ways to load templates (Template Catalog, HTML Import, Brand Styles), proper state management is critical to ensure the correct template stays loaded:
+
+#### Clear Selection State on Dynamic Operations
+
+```javascript
+// When importing HTML
+const handleHtmlImport = async (html: string) => {
+  const importedData = await convertHtmlToJson(html);
+  
+  // Clear selectedTemplate to prevent catalog template from auto-reloading
+  setSelectedTemplate(null);
+  setCurrentJson(importedData);
+  
+  if ((window as any).loadTemplate) {
+    await (window as any).loadTemplate(importedData);
+  }
+};
+
+// When applying brand styles
+const handleApplyBrandStyles = async (brandStyles: any) => {
+  // Clear selectedTemplate to prevent original template from reloading
+  setSelectedTemplate(null);
+  
+  if ((window as any).applyBrandStyles) {
+    await (window as any).applyBrandStyles(brandStyles);
+  }
+};
+```
+
+**Why This Pattern:**
+- When `selectedTemplate` state is set from the Template Catalog, a `useEffect` monitoring it will re-trigger when the component re-renders
+- This causes the original catalog template to reload, overwriting imported or styled templates
+- Clearing the state ensures the most recently loaded template (imported or styled) stays in the builder
+
+#### Track Current Template with Refs
+
+Use a ref to track the current template in the editor, updated via `onChange`:
+
+```javascript
+// In BeefreeEditor component
+const currentTemplateRef = useRef(null);
+
+const finalBeeConfig = {
+  onChange: (json) => {
+    const templateData = typeof json === 'string' ? JSON.parse(json) : json;
+    currentTemplateRef.current = templateData; // Always keep ref updated with latest changes
+    onJsonChange(templateData);
+  }
+};
+
+// After SDK starts, initialize the ref
+await sdk.start(finalBeeConfig, initialJson, '', { shared: false });
+if (initialJson) {
+  currentTemplateRef.current = initialJson;
+}
+```
+
+**Benefits:**
+- Always have access to the current template without relying on potentially stale React state
+- Enables proper brand styles application to whichever template is actively loaded
+- Ensures template continuity across multiple operations (load, edit, style, export)
+
+#### Synchronize State When Loading Templates
+
+Always update both the ref and state when loading templates:
+
+```javascript
+(window as any).loadTemplate = async (templateData) => {
+  if (sdkRef.current && isInitialized) {
+    const normalizedData = normalizeTemplateJson(templateData);
+    await sdkRef.current.load(normalizedData);
+    currentTemplateRef.current = normalizedData; // Keep ref synchronized
+    onTemplateLoad(normalizedData);
+    onJsonChange(normalizedData);
+  }
+};
+```
+
+#### Apply Brand Styles to Current Template
+
+Use the ref to ensure brand styles apply to the current template, not stale state:
+
+```javascript
+(window as any).applyBrandStyles = async (brandStyles) => {
+  if (!currentTemplateRef.current) {
+    alert('No template loaded');
+    return;
+  }
+  
+  // Send current template (from ref) to Brand Styles API
+  const response = await axios.post('/api/apply-brand-styles', {
+    styles: brandStyles,
+    template: currentTemplateRef.current
+  });
+  
+  if (response.data.status === 'unchanged') {
+    return; // No matching elements found
+  }
+  
+  const styledJson = response.data.json || response.data;
+  
+  // Load styled template back into editor
+  await sdkRef.current.load(styledJson);
+  currentTemplateRef.current = styledJson; // Update ref with styled version
+  onTemplateLoad(styledJson);
+};
+```
+
+---
+
+## Summary of Key Points
+
+✅ **PDF and Image exports require HTML first** - don't send template JSON directly  
+✅ **Use `.start()` method** to initialize Beefree SDK  
+✅ **Handle JSON-wrapped HTML responses** in HTML export  
+✅ **Image export returns binary data** - use blob and createObjectURL  
+✅ **Always include Bearer prefix** in authorization headers  
+✅ **Validate API tokens** before making requests  
+✅ **Use centralized forwardPost helper** for Content Services API  
+✅ **Sanitize HTML** before importing  
+✅ **Provide user-friendly error messages** with alerts  
+✅ **Use pure async/await style** - avoid mixing with .then()  
+✅ **Clear selectedTemplate state** when importing HTML or applying brand styles to prevent unwanted reloads  
+✅ **Track current template with refs** updated via onChange for reliable access  
+✅ **Expose functions on window object** for cross-component communication  
+✅ **Update refs when loading templates** to keep state synchronized across operations  
+✅ **Use refs (not state) when applying brand styles** to ensure current template is styled  
+✅ **Enable trackChanges: true** for onChange/onSave callbacks to work  
+✅ **Log template JSON in onChange/onSave** for debugging (console.log)  
+✅ **Use TypeScript types** - Avoid `any`, use proper interfaces  
+✅ **Use CSS variables** - Prefer `var(--color-name)` over hardcoded colors  
+✅ **Error handling** - Use `err: unknown` with type guards  
+✅ **Configuration toggles** - Auto-apply changes, update textarea, cleanup on unmount  
+
+---
+
+## Documentation Structure
+
+All project documentation is organized in the `docs/` folder:
+
+- **`docs/INDEX.md`** - Documentation index (start here!)
+- **`docs/QUICK-START.md`** - 5-minute setup guide
+- **`docs/CONTRIBUTION-GUIDE.md`** - Complete architecture guide
+- **`docs/CODING-STANDARDS.md`** - Best practices and clean code
+- **`docs/SECURITY.md`** - Security best practices
+- **`docs/DEPLOYMENT-CHECKLIST.md`** - Vercel deployment guide
+- **`docs/FEATURES-VERIFICATION.md`** - Testing guide
+
+The root `README.md` provides an overview and links to all documentation.
+
+---
+
+This document should be kept up-to-date as new best practices emerge or Beefree APIs evolve.
+

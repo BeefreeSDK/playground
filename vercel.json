@@ -1,0 +1,23 @@
+{
+  "rewrites": [
+    {
+      "source": "/v1/message/:path*",
+      "destination": "/api/v1/message/:path*"
+    },
+    {
+      "source": "/v1/:path*",
+      "destination": "/api/v1/:path*"
+    },
+    {
+      "source": "/proxy/:path*",
+      "destination": "/api/proxy/:path*"
+    }
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
+}
+
