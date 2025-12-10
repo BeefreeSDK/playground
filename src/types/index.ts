@@ -75,11 +75,3 @@ export interface TagsResponse {
 
 // Beefree SDK Types
 // Note: BeefreeConfig is exported from './beefree' above
-// This interface is kept for backward compatibility but should use the one from beefree.ts
-
-export interface BeefreeToken {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token?: string;
-}
