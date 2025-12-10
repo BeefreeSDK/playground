@@ -225,51 +225,110 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
   };
 
   /**
-   * Reset to Default Configuration
-   * Loads a sample config with common features like merge tags, display conditions, etc.
+   * Get default configuration
+   * This MUST match the defaultBeeConfig in BeefreeEditor.tsx exactly
    */
-  const resetToDefault = () => {
-    const defaultConfig: BeefreeConfig = {
+  const getDefaultConfig = (): BeefreeConfig => {
+    return {
       container: 'beefree-react-demo',
       language: 'en-US',
-      trackChanges: true,
       sidebarPosition: 'left',
+      trackChanges: true,
       rowDisplayConditions: [
         {
-          type: 'Last ordered',
+          type: 'Last ordered catalog',
           label: 'new',
-          description: 'Only new client will see this.',
+          description: 'Only new client will see this',
           before: '{% if lastOrder.catalog == "New" %}',
           after: '{% endif %}'
         }
       ],
       rowsConfiguration: {
-        emptyRows: true,
-        defaultRows: [
+        externalContentURLs: [
           {
-            columns: [
-              {
-                grid: [12],
-                modules: [
-                  {
-                    type: 'mailup-bee-newsletter-modules-paragraph',
-                    descriptor: {
-                      text: {
-                        value: 'Drop your content here'
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
+            name: 'External resource',
+            value: 'https://qa-bee-playground-backend.getbee.io/api/customrows?ids=1,2,3,4'
           }
         ]
-      }
+      },
+      mergeTags: [
+        {
+          name: 'first name',
+          value: '[first-name]',
+          previewValue: 'John'
+        },
+        {
+          name: 'last name',
+          value: '[last-name]',
+          previewValue: 'Doe'
+        },
+        {
+          name: 'email',
+          value: '[email]',
+          previewValue: 'john.doe@gmail.com'
+        },
+        {
+          name: 'company',
+          value: '[company]',
+          previewValue: 'Company Srl'
+        }
+      ]
     };
-    
+  };
+
+  /**
+   * Reset to Default Configuration
+   * Loads the default config and applies it
+   */
+  const resetToDefault = () => {
+    const defaultConfig = getDefaultConfig();
     setConfigText(JSON.stringify(defaultConfig, null, 2));
     setError('');
   };
+
+  /**
+   * Reset to Default and Apply
+   * Resets config and immediately applies it (refreshes builder)
+   */
+  const handleResetAndApply = async () => {
+    const defaultConfig = getDefaultConfig();
+    setConfigText(JSON.stringify(defaultConfig, null, 2));
+    setError('');
+    setIsApplying(true);
+
+    try {
+      await onConfigChange(defaultConfig);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to apply configuration';
+      setError(`Error: ${errorMessage}`);
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  /**
+   * Check if current config differs from default
+   * Returns true if config is different from default
+   */
+  const isConfigDifferentFromDefault = (): boolean => {
+    // Don't show reset button if config is empty
+    if (!configText || !configText.trim()) {
+      return false;
+    }
+
+    try {
+      const currentParsed = JSON.parse(configText);
+      const defaultConfig = getDefaultConfig();
+
+      // Deep comparison of configs
+      return JSON.stringify(currentParsed) !== JSON.stringify(defaultConfig);
+    } catch {
+      // If JSON is invalid but not empty, consider it different
+      return true;
+    }
+  };
+
+  const showResetButton = isConfigDifferentFromDefault();
 
   return (
     <div className="bee-config-sidebar">
@@ -301,13 +360,23 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
       )}
 
       <div className="config-actions">
-        <button 
+        <button
           onClick={handleApplyChanges}
           disabled={isApplying || !configText.trim()}
           className="apply-button"
         >
           {isApplying ? 'Applying...' : 'Apply changes'}
         </button>
+        {showResetButton && (
+          <button
+            onClick={handleResetAndApply}
+            disabled={isApplying}
+            className="reset-apply-button"
+            title="Reset to default configuration and apply"
+          >
+            Reset
+          </button>
+        )}
       </div>
 
       <div className="config-info">
