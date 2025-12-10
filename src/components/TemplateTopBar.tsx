@@ -55,17 +55,17 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
   const fetchTemplates = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
       // Fetch first 10 templates from the catalog
       const response = await axios.get('/api/templates?limit=10');
-      
+
       console.log('Templates API response:', response.data);
-      
+
       // Handle different response structures for template lists
       let templatesArray: unknown[] = [];
       const data = response.data;
-      
+
       if (Array.isArray(data)) {
         templatesArray = data;
       } else if (data?.results && Array.isArray(data.results)) {
@@ -77,23 +77,23 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
       } else if (data?.data && Array.isArray(data.data)) {
         templatesArray = data.data;
       }
-      
+
       console.log('Raw API data structure:', data);
       console.log('Found templates array:', templatesArray.length, 'templates');
-      
+
       // Process templates to ensure they have the structure we need
       // Limit to first 10 templates
       const processedTemplates: TemplateData[] = templatesArray
         .filter((template): template is Record<string, unknown> => {
-          return template !== null && typeof template === 'object' && 
+          return template !== null && typeof template === 'object' &&
                  ('id' in template || 'slug' in template);
         })
         .slice(0, 10) // Limit to 10 templates
         .map((template, index): TemplateData => {
           const templateObj = template as Record<string, unknown>;
           return {
-            id: (typeof templateObj.id === 'string' ? templateObj.id : 
-                 typeof templateObj.slug === 'string' ? templateObj.slug : 
+            id: (typeof templateObj.id === 'string' ? templateObj.id :
+                 typeof templateObj.slug === 'string' ? templateObj.slug :
                  `template-${index}`),
             name: (typeof templateObj.title === 'string' ? templateObj.title :
                    typeof templateObj.display_name === 'string' ? templateObj.display_name :
@@ -114,7 +114,7 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
             data: templateObj
           };
         });
-      
+
       setTemplates(processedTemplates);
       console.log('Processed templates (first 10):', processedTemplates.length);
       console.log('Template names:', processedTemplates.map(t => t.name));
@@ -216,7 +216,7 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
                       setLoading(true);
                       const response = await axios.get(`/api/templates/${selectedId}`);
                       const fullTemplate = response.data;
-                      
+
                       onTemplateSelect({
                         id: template.id,
                         name: template.display_name || template.name,

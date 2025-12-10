@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import BeefreeSDK from '@beefree.io/sdk';
-import type { 
-  TemplateData, 
-  BeefreeTemplateJson, 
-  BeefreeConfig, 
+import type {
+  TemplateData,
+  BeefreeTemplateJson,
+  BeefreeConfig,
   BeefreeSDKInstance,
-  ChangeResponse 
+  ChangeResponse
 } from '../types/beefree';
 
 /**
@@ -206,7 +206,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         setError('');
 
         console.log('🚀 Initializing Beefree SDK...');
-        
+
         // Step 1: Get authentication token from our proxy endpoint
         const authResponse = await axios.post('/api/proxy/bee-auth', {
           uid: 'demo-user'

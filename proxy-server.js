@@ -24,27 +24,6 @@ const CS_AUTH = RAW_CS_TOKEN.startsWith('Bearer ') ? RAW_CS_TOKEN : (RAW_CS_TOKE
 const HTML_IMPORTER_API_KEY = process.env.HTML_IMPORTER_API_KEY;
 const HTML_IMPORTER_URL = process.env.HTML_IMPORTER_URL || 'https://api.getbee.io/v1/conversion/html-to-json';
 
-// Cache for performance optimization
-const cache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-function getCacheKey(url, body) {
-  return `${url}:${JSON.stringify(body)}`;
-}
-
-function getFromCache(key) {
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.data;
-  }
-  cache.delete(key);
-  return null;
-}
-
-function setCache(key, data) {
-  cache.set(key, { data, timestamp: Date.now() });
-}
-
 // V2 Auth Endpoint
 app.post('/proxy/bee-auth', async (req, res) => {
   try {
@@ -314,19 +293,6 @@ app.post('/v1/message/image', async (req, res) => {
   await forwardPost('https://api.getbee.io/v1/message/image', req, res, 'arraybuffer');
 });
 
-// Cache management endpoints
-app.get('/cache/status', (req, res) => {
-  res.json({
-    size: cache.size,
-    keys: Array.from(cache.keys()).slice(0, 10) // Show first 10 keys
-  });
-});
-
-app.post('/cache/clear', (req, res) => {
-  cache.clear();
-  res.json({ message: 'Cache cleared' });
-});
-
 // HTML Sanitization function
 const sanitizeHtml = (html) => {
   if (typeof html !== 'string') {
@@ -426,16 +392,6 @@ app.post('/v1/html-importer', async (req, res) => {
     }
   }
 });
-
-// Auto-cleanup expired cache entries every 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of cache.entries()) {
-    if (now - value.timestamp > CACHE_DURATION) {
-      cache.delete(key);
-    }
-  }
-}, 10 * 60 * 1000);
 
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
