@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { templateCatalogAPI, handleApiError } from '../services/api';
 import type { TemplateData } from '../types';
 
 /**
@@ -57,38 +57,39 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
     setError('');
 
     try {
-      // Fetch first 10 templates from the catalog
-      const response = await axios.get('/api/templates?limit=10');
+      // Fetch first 10 templates from the catalog using API abstraction
+      const data = await templateCatalogAPI.getTemplates({ limit: 10 });
 
-      console.log('Templates API response:', response.data);
+      console.log('Templates API response:', data);
 
-      // Handle different response structures for template lists
+      // Handle different response structures from the API
       let templatesArray: unknown[] = [];
-      const data = response.data;
 
       if (Array.isArray(data)) {
+        // API returned array directly
         templatesArray = data;
-      } else if (data?.results && Array.isArray(data.results)) {
-        templatesArray = data.results;
-      } else if (data?.templates && Array.isArray(data.templates)) {
-        templatesArray = data.templates;
-      } else if (data?.items && Array.isArray(data.items)) {
-        templatesArray = data.items;
-      } else if (data?.data && Array.isArray(data.data)) {
-        templatesArray = data.data;
+      } else if (data && typeof data === 'object') {
+        // API returned object, check for common property names
+        if ('templates' in data && Array.isArray(data.templates)) {
+          templatesArray = data.templates;
+        } else if ('results' in data && Array.isArray(data.results)) {
+          templatesArray = data.results;
+        } else if ('items' in data && Array.isArray(data.items)) {
+          templatesArray = data.items;
+        } else if ('data' in data && Array.isArray(data.data)) {
+          templatesArray = data.data;
+        }
       }
 
-      console.log('Raw API data structure:', data);
-      console.log('Found templates array:', templatesArray.length, 'templates');
+      console.log('Found templates:', templatesArray.length, 'templates');
 
       // Process templates to ensure they have the structure we need
-      // Limit to first 10 templates
       const processedTemplates: TemplateData[] = templatesArray
         .filter((template): template is Record<string, unknown> => {
           return template !== null && typeof template === 'object' &&
                  ('id' in template || 'slug' in template);
         })
-        .slice(0, 10) // Limit to 10 templates
+        .slice(0, 10)
         .map((template, index): TemplateData => {
           const templateObj = template as Record<string, unknown>;
           return {
@@ -118,8 +119,9 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
       setTemplates(processedTemplates);
       console.log('Processed templates (first 10):', processedTemplates.length);
       console.log('Template names:', processedTemplates.map(t => t.name));
-    } catch (err) {
-      setError('Failed to fetch templates');
+    } catch (err: unknown) {
+      const errorMessage = handleApiError(err);
+      setError(errorMessage);
       console.error('Error fetching templates:', err);
       setTemplates([]);
     } finally {
@@ -214,19 +216,19 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
                     // Fetch full template details including json_data
                     try {
                       setLoading(true);
-                      const response = await axios.get(`/api/templates/${selectedId}`);
-                      const fullTemplate = response.data;
+                      const fullTemplate = await templateCatalogAPI.getTemplate(selectedId);
 
                       onTemplateSelect({
                         id: template.id,
                         name: template.display_name || template.name,
                         display_name: template.display_name,
-                        json_data: fullTemplate.json_data || fullTemplate,
-                        data: fullTemplate
+                        json_data: (fullTemplate.json_data || fullTemplate) as TemplateData['json_data'],
+                        data: fullTemplate.data || fullTemplate
                       });
                     } catch (err: unknown) {
+                      const errorMessage = handleApiError(err);
                       console.error('Failed to fetch template details:', err);
-                      setError('Failed to load template');
+                      setError(errorMessage);
                     } finally {
                       setLoading(false);
                     }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
+import { authAPI, templateCatalogAPI } from '../services/api';
 import BeefreeSDK from '@beefree.io/sdk';
 import type {
   TemplateData,
@@ -207,14 +207,11 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
 
         console.log('🚀 Initializing Beefree SDK...');
 
-        // Step 1: Get authentication token from our proxy endpoint
-        const authResponse = await axios.post('/api/proxy/bee-auth', {
-          uid: 'demo-user'
-        });
+        // Step 1: Get authentication token using API abstraction
+        const token = await authAPI.getToken('demo-user');
 
         if (disposed) return;
 
-        const token = authResponse.data;
         console.log('✅ Authentication successful');
 
         // Step 2: Initialize Beefree SDK instance with token
@@ -435,8 +432,8 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
           }
         } else {
           try {
-            const response = await axios.get(`/api/templates/${selectedTemplate.id}`);
-            templateData = response.data?.json_data || response.data;
+            const fullTemplate = await templateCatalogAPI.getTemplate(selectedTemplate.id);
+            templateData = fullTemplate.json_data || fullTemplate;
           } catch (err) {
             console.error('Failed to fetch template data:', err);
             templateData = {

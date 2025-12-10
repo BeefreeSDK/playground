@@ -20,7 +20,7 @@ const api = axios.create({
 // Authentication
 export const authAPI = {
   getToken: async (uid: string = 'demo-user') => {
-    const response = await api.post('/bee-auth', { uid });
+    const response = await api.post('/proxy/bee-auth', { uid });
     return response.data;
   },
 };
