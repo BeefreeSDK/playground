@@ -1,18 +1,195 @@
 # Beefree SDK Integration Best Practices
 
-This file contains best practices and guidelines for implementing Beefree SDK features across all applications.
+This document serves as a comprehensive reference guide for implementing Beefree SDK features. Use this as a knowledge base when working with the Beefree SDK integration in this project.
 
 ## Table of Contents
-1. [Export Endpoints (Content Services API)](#export-endpoints-content-services-api)
-2. [Template Catalog API](#template-catalog-api)
-3. [Loading the Beefree SDK](#loading-the-beefree-sdk)
-4. [Loading Templates in the Builder](#loading-templates-in-the-builder)
-5. [onChange and onSave Callbacks](#onchange-and-onsave-callbacks)
-6. [Configuration Toggles](#configuration-toggles)
-7. [HTML Import Functionality](#html-import-functionality)
-8. [Brand Styles API](#brand-styles-api)
-9. [Error Handling](#error-handling)
-10. [TypeScript Best Practices](#typescript-best-practices)
+1. [Static Template System](#static-template-system) ⭐ **NEW**
+2. [Export Endpoints (Content Services API)](#export-endpoints-content-services-api)
+3. [Template Catalog API](#template-catalog-api)
+4. [Loading the Beefree SDK](#loading-the-beefree-sdk)
+5. [Loading Templates in the Builder](#loading-templates-in-the-builder)
+6. [onChange and onSave Callbacks](#onchange-and-onsave-callbacks)
+7. [Configuration Toggles](#configuration-toggles)
+8. [HTML Import Functionality](#html-import-functionality)
+9. [Brand Styles API](#brand-styles-api)
+10. [Error Handling](#error-handling)
+11. [TypeScript Best Practices](#typescript-best-practices)
+
+---
+
+## Static Template System
+
+### Overview
+This application uses a static template system where all templates and their exports (HTML, PDF, PNG, TXT) are pre-generated at build time. This eliminates the need for real-time API calls during export operations and provides a faster, more predictable user experience.
+
+### Key Concepts
+
+**IMPORTANT**: User edits made in the Beefree SDK editor are NOT saved to the static export files. Exports always show the original template. Users are warned about this with alert dialogs before each export.
+
+### Architecture
+
+```
+public/templates/
+├── index.json                    # Template catalog
+├── beefree-sdk-demo-template.json   # Template metadata + JSON
+├── thanksgiving-travel.json
+├── ...other templates...
+└── exports/
+    ├── beefree-sdk-demo-template.html  # Pre-generated HTML
+    ├── beefree-sdk-demo-template.pdf   # Pre-generated PDF
+    ├── beefree-sdk-demo-template.png   # Pre-generated image
+    ├── beefree-sdk-demo-template.txt   # Pre-generated text
+    └── ...other exports...
+```
+
+### Export Script
+
+The `scripts/export-templates.js` script generates all static files:
+
+```javascript
+// 1. Process initial template from /public/template.json
+const initialTemplatePath = path.join(__dirname, '../public/template.json');
+const initialTemplateJson = JSON.parse(fs.readFileSync(initialTemplatePath, 'utf8'));
+const templateId = 'beefree-sdk-demo-template';
+
+// 2. Generate all export formats using Content Services API
+const html = await convertToHtml(initialTemplateJson);
+const plainText = await convertToPlainText(initialTemplateJson);
+const pdfBuffer = await convertToPdf(html);
+const imageBuffer = await convertToImage(html);
+
+// 3. Save all formats
+fs.writeFileSync(path.join(templatesDir, `${templateId}.json`), JSON.stringify(templateData));
+fs.writeFileSync(path.join(exportsDir, `${templateId}.html`), html);
+fs.writeFileSync(path.join(exportsDir, `${templateId}.txt`), plainText);
+fs.writeFileSync(path.join(exportsDir, `${templateId}.pdf`), pdfBuffer);
+fs.writeFileSync(path.join(exportsDir, `${templateId}.png`), imageBuffer);
+
+// 4. Fetch additional templates from Template Catalog API
+const templates = await fetchTemplates();
+// ... repeat export process for each template
+```
+
+**Run the script**:
+```bash
+node scripts/export-templates.js
+```
+
+### Local Templates Service
+
+The `src/services/localTemplates.ts` service provides functions to load static templates:
+
+```typescript
+// Load all templates from index
+export async function loadAllTemplates(): Promise<LocalTemplate[]> {
+  const index = await loadTemplatesIndex();
+  return index.templates;
+}
+
+// Load single template
+export async function loadTemplate(templateId: string): Promise<LocalTemplate> {
+  const response = await fetch(`/templates/${templateId}.json`);
+  return response.json();
+}
+
+// Load pre-generated exports
+export async function loadTemplateHtml(templateId: string): Promise<string> {
+  const response = await fetch(`/templates/exports/${templateId}.html`);
+  return response.text();
+}
+
+export function getTemplatePdfUrl(templateId: string): string {
+  return `/templates/exports/${templateId}.pdf`;
+}
+
+export function getTemplateImageUrl(templateId: string): string {
+  return `/templates/exports/${templateId}.png`;
+}
+```
+
+### Auto-Select Initial Template
+
+The app automatically selects the initial template on load:
+
+```typescript
+// In App.tsx
+useEffect(() => {
+  const loadInitialTemplate = async () => {
+    try {
+      const initialTemplateId = 'beefree-sdk-demo-template';
+      const templateData = await loadTemplate(initialTemplateId);
+
+      setSelectedTemplate({
+        id: templateData.id,
+        name: templateData.name,
+        display_name: templateData.display_name || templateData.name,
+        title: templateData.title,
+        json_data: templateData.json_data,
+        data: { templateId: templateData.id }
+      });
+    } catch (err) {
+      console.error('Failed to load initial template:', err);
+    }
+  };
+
+  loadInitialTemplate();
+}, []); // Run once on mount
+```
+
+### Export Handlers
+
+All export handlers follow the same pattern:
+
+```typescript
+const handleGetHtml = async () => {
+  const templateId = (selectedTemplate?.data as any)?.templateId;
+  if (!templateId) {
+    alert('Template ID not found');
+    return;
+  }
+
+  // Warn user about static export
+  alert('⚠️ Warning: This will export the ORIGINAL template. Any changes you made in the editor will NOT be included.');
+
+  setExportType('html');
+  setExportModalOpen(true);
+  setExportLoading(true);
+
+  try {
+    // Load pre-generated static HTML file
+    const html = await loadTemplateHtml(templateId);
+
+    setExportContent(html);
+    setExportLoading(false);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    console.error('HTML export error:', err);
+    alert('Failed to export HTML: ' + errorMessage);
+    setExportModalOpen(false);
+  }
+};
+```
+
+### Benefits
+
+1. **No API Calls During Export** - Faster export operations
+2. **Predictable File Sizes** - All exports pre-generated
+3. **No API Rate Limits** - Static files served from CDN
+4. **Offline Capable** - Works without internet (after initial load)
+5. **Simple Deployment** - Just static files on Vercel
+
+### Limitations
+
+1. **User Edits Not Saved** - Exports always show original template
+2. **Build-Time Generation** - New templates require running export script
+3. **Storage Requirements** - All export formats stored as static files
+
+### Best Practices
+
+1. **Always warn users** - Show alert before export that edits won't be included
+2. **Run export script** - After adding new templates or updating existing ones
+3. **Version control** - Commit all generated files to git
+4. **Clear communication** - Document the static export behavior in UI
 
 ---
 
@@ -631,7 +808,7 @@ onSave: (
 ) => {
   const parsedJson = typeof jsonFile === 'string' ? JSON.parse(jsonFile) : jsonFile;
   
-  // Log template JSON to browser console
+  // Log the template JSON to browser console
   console.log('💾 onSave - Template JSON:', parsedJson);
   if (htmlFile) {
     console.log('💾 onSave - HTML:', htmlFile);
@@ -849,7 +1026,7 @@ const handleHtmlImport = async (html) => {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ error: 'Failed to import HTML' }));
       throw new Error(errorData.error || 'Failed to import HTML');
     }
 
@@ -1109,8 +1286,8 @@ app.post('/apply-brand-styles', async (req, res) => {
 
 1. **Always validate configuration** before making API calls
 2. **Use try-catch blocks** for async operations
-3. **Provide user-friendly error messages**
-4. **Log detailed errors** for debugging
+3. **Provide user-friendly error messages** with `alert()` for critical failures
+4. **Log detailed errors** to console for debugging
 5. **Handle network failures gracefully**
 
 ### Frontend Error Handling Pattern

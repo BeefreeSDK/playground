@@ -19,18 +19,19 @@ A comprehensive demonstration of Beefree SDK integration featuring Template Cata
 - Module grouping configuration
 - Editable beeConfig with live preview
 
-### 📚 Template Catalog
-- Browse 10 professional templates
+### 📚 Static Template System
+- 9 pre-exported professional templates
+- Initial template auto-selected on app load
 - One-click template loading
 - Seamless template switching
 
-### 📤 Content Services Exports
-- **HTML Export** - Download responsive HTML
-- **Plain Text Export** - Text-only version
-- **PDF Export** - Auto-generates PDF with custom page settings
-- **Image Export** - Creates PNG thumbnail
+### 📤 Static Export System
+- **HTML Export** - Pre-generated responsive HTML
+- **Plain Text Export** - Pre-generated text-only version
+- **PDF Export** - Pre-generated PDF documents
+- **Image Export** - Pre-generated PNG thumbnails
 
-> **Smart Auto-Generation**: PDF and Image exports automatically generate HTML first - no manual steps needed!
+> **Note**: All exports are static files generated at build time. User edits in the editor are NOT included in exports. A warning is displayed before each export.
 
 ### 📥 HTML Import
 - Load sample newsletter template
@@ -105,8 +106,18 @@ playground-demo/
 │   └── App.css                   # Global styles
 │
 ├── public/
-│   └── template.json             # Default template
+│   ├── template.json             # Initial template (loaded on app start)
+│   └── templates/                # Static template exports
+│       ├── index.json            # Template catalog index
+│       ├── *.json                # Template metadata + JSON
+│       └── exports/              # Pre-generated exports
+│           ├── *.html            # HTML versions
+│           ├── *.txt             # Plain text versions
+│           ├── *.pdf             # PDF versions
+│           └── *.png             # Image versions
 │
+├── scripts/
+│   └── export-templates.js       # Template export script
 ├── proxy-server.js               # Express server (local dev)
 ├── vercel.json                   # Vercel configuration
 └── package.json                  # Dependencies
@@ -148,45 +159,33 @@ playground-demo/
 
 ### Template Loading Flow
 ```
-1. User selects template from dropdown
+1. App loads → Initial template auto-selected (beefree-sdk-demo-template)
    ↓
-2. Fetch full template via /api/templates/{id}
+2. User can select different template from dropdown
    ↓
-3. Call window.loadTemplate(templateData)
+3. Load template JSON from /templates/{id}.json
    ↓
-4. Beefree SDK loads template into editor
+4. Call window.loadTemplate(templateData)
    ↓
-5. User can edit and export
+5. Beefree SDK loads template into editor
+   ↓
+6. User can edit (edits NOT saved to exports)
 ```
 
-### Export Flow (HTML, Plain Text)
+### Export Flow (All Formats)
 ```
-1. User clicks Export → HTML
+1. User clicks Export → [Format]
    ↓
-2. Modal opens with "Exporting..."
+2. Warning alert: "User edits NOT included"
    ↓
-3. Send currentJson to /v1/message/html
+3. User confirms
    ↓
-4. API returns HTML
+4. Load pre-generated static file from /templates/exports/
    ↓
-5. Display in modal with download button
-```
-
-### Export Flow (PDF, Image) - With Auto-HTML
-```
-1. User clicks Export → PDF
-   ↓
-2. Modal opens with "Creating PDF..."
-   ↓
-3. Check if HTML exists
-   - NO: Auto-generate HTML first ✨
-   - YES: Use existing HTML
-   ↓
-4. Send HTML to /v1/message/pdf
-   ↓
-5. API returns PDF URL
-   ↓
-6. Display "Open PDF" button in modal
+5. Display in modal
+   - HTML/Text: Show in textarea
+   - PDF: Show "Open PDF" button
+   - Image: Show thumbnail
 ```
 
 ### Configuration Toggles Flow
@@ -451,18 +450,18 @@ PORT=3001
 
 ### Local Testing Checklist
 
-- [ ] Builder initializes with default template
-- [ ] Template dropdown shows 10 templates
+- [ ] Builder initializes with "Beefree SDK Demo Template" auto-selected
+- [ ] Template dropdown shows 9 templates
 - [ ] Selecting template loads it in editor
 - [ ] Custom CSS toggle works (check JSON updates)
 - [ ] Move Sidebar toggle works (sidebar moves left/right)
 - [ ] Group Content Tiles toggle works (modules grouped)
 - [ ] onChange logs template JSON to console when editing
 - [ ] onSave logs template JSON to console when saving
-- [ ] Export HTML works
-- [ ] Export Plain Text works
-- [ ] Export PDF works (auto-generates HTML)
-- [ ] Export Image works (auto-generates HTML)
+- [ ] Export HTML shows warning, then displays pre-generated HTML
+- [ ] Export Plain Text shows warning, then displays pre-generated text
+- [ ] Export PDF shows warning, then displays PDF link
+- [ ] Export Image shows warning, then displays pre-generated image
 - [ ] Import HTML loads sample newsletter
 - [ ] Edit beeConfig + Apply changes restarts editor
 
@@ -500,17 +499,21 @@ See LICENSE file for details.
 
 ## 🎉 Features Highlights
 
-✅ **8 Serverless Functions** - Under Vercel free tier limit  
-✅ **Auto-HTML Generation** - PDF/Image exports just work  
-✅ **3 Configuration Toggles** - CSS, Sidebar, Module Groups  
-✅ **onChange/onSave Callbacks** - Template changes logged to console  
-✅ **500px Config Sidebar** - Comfortable JSON editing  
-✅ **Modal-Based Exports** - Professional UX  
-✅ **Sample Newsletter** - One-click HTML import  
-✅ **Fully Commented Code** - Easy to understand and extend  
-✅ **Security Best Practices** - Secure API key management  
-✅ **Clean Code Standards** - TypeScript, async/await, error handling  
-✅ **Vercel Ready** - Deploy in minutes  
+✅ **Static Template System** - 9 pre-exported templates with all formats
+✅ **Auto-Selected Initial Template** - Ready to use on app load
+✅ **Static Export System** - Pre-generated HTML, PDF, PNG, TXT files
+✅ **Export Warnings** - Clear alerts that user edits aren't included
+✅ **3 Configuration Toggles** - CSS, Sidebar, Module Groups
+✅ **onChange/onSave Callbacks** - Template changes logged to console
+✅ **500px Config Sidebar** - Comfortable JSON editing
+✅ **Modal-Based Exports** - Professional UX
+✅ **Sample Newsletter** - One-click HTML import
+✅ **Fully Commented Code** - Easy to understand and extend
+✅ **Security Best Practices** - Secure API key management
+✅ **Clean Code Standards** - TypeScript, async/await, error handling
+✅ **No Dark Mode** - Clean light theme only
+✅ **No User Tracking** - Privacy-focused
+✅ **Vercel Ready** - Deploy in minutes
 
 Built with ❤️ using Beefree SDK
 
