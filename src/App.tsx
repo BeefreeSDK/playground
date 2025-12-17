@@ -176,12 +176,7 @@ function App() {
    * WARNING: This exports the original template, not any changes the user made
    */
   const handleGetHtml = async () => {
-    if (!selectedTemplate || !selectedTemplate.data) {
-      alert('Please load a template from the dropdown first.');
-      return;
-    }
-
-    const templateId = (selectedTemplate.data as any).templateId;
+    const templateId = (selectedTemplate?.data as any)?.templateId;
     if (!templateId) {
       alert('Template ID not found');
       return;
@@ -221,12 +216,7 @@ function App() {
    * WARNING: This exports the original template, not any changes the user made
    */
   const handleGetPlainText = async () => {
-    if (!selectedTemplate || !selectedTemplate.data) {
-      alert('Please load a template from the dropdown first.');
-      return;
-    }
-
-    const templateId = (selectedTemplate.data as any).templateId;
+    const templateId = (selectedTemplate?.data as any)?.templateId;
     if (!templateId) {
       alert('Template ID not found');
       return;
@@ -265,12 +255,7 @@ function App() {
    * WARNING: This exports the original template, not any changes the user made
    */
   const handleGetPdf = async () => {
-    if (!selectedTemplate || !selectedTemplate.data) {
-      alert('Please load a template from the dropdown first.');
-      return;
-    }
-
-    const templateId = (selectedTemplate.data as any).templateId;
+    const templateId = (selectedTemplate?.data as any)?.templateId;
     if (!templateId) {
       alert('Template ID not found');
       return;
@@ -309,12 +294,7 @@ function App() {
    * WARNING: This exports the original template, not any changes the user made
    */
   const handleGetImage = async () => {
-    if (!selectedTemplate || !selectedTemplate.data) {
-      alert('Please load a template from the dropdown first.');
-      return;
-    }
-
-    const templateId = (selectedTemplate.data as any).templateId;
+    const templateId = (selectedTemplate?.data as any)?.templateId;
     if (!templateId) {
       alert('Template ID not found');
       return;
