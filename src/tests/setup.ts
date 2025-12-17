@@ -1,4 +1,4 @@
-import { expect, afterEach, vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
@@ -11,9 +11,9 @@ afterEach(() => {
 global.alert = vi.fn();
 
 // Mock window.BeePlugin
-global.BeePlugin = {
+(global as any).BeePlugin = {
   start: vi.fn(),
-} as any;
+};
 
 // Mock fetch globally
 global.fetch = vi.fn();

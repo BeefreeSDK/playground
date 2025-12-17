@@ -54,8 +54,8 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
         const currentConfig: BeefreeConfig = configText ? JSON.parse(configText) : { container: 'beefree-react-demo' };
         
         if (enabled) {
-          // Add customCss URL to config
-          currentConfig.customCss = "https://zairro.github.io/beefree-custom-css/beefree-custom-design.css";
+          // Add customCss URL to config (using local file)
+          currentConfig.customCss = "/assets/css/beefree-custom-design.css";
         } else {
           // Remove customCss from config
           delete currentConfig.customCss;

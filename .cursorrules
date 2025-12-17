@@ -836,7 +836,7 @@ useEffect(() => {
     const currentConfig: BeefreeConfig = configText ? JSON.parse(configText) : { container: 'beefree-react-demo' };
     
     if (enabled) {
-      currentConfig.customCss = "https://zairro.github.io/beefree-custom-css/beefree-custom-design.css";
+      currentConfig.customCss = "/assets/css/beefree-custom-design.css";
     } else {
       delete currentConfig.customCss;
     }
@@ -867,14 +867,14 @@ const handleCustomCssToggle = (enabled: boolean) => {
 
 **Property**: `customCss: string`
 
-**When enabled**: Adds external CSS URL to beeConfig
+**When enabled**: Adds local CSS file URL to beeConfig
 **When disabled**: Removes `customCss` property
 
 ```typescript
 // Enabled
 {
   container: 'beefree-react-demo',
-  customCss: "https://zairro.github.io/beefree-custom-css/beefree-custom-design.css"
+  customCss: "/assets/css/beefree-custom-design.css"
 }
 
 // Disabled

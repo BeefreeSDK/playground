@@ -620,7 +620,7 @@ onChange: (json) => {
 **Custom CSS Toggle Logic:**
 ```javascript
 // Toggle ON
-currentConfig.customCss = "https://zairro.github.io/beefree-custom-css/beefree-custom-design.css";
+currentConfig.customCss = "/assets/css/beefree-custom-design.css";
 
 // Toggle OFF
 delete currentConfig.customCss;
