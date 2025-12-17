@@ -8,11 +8,15 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Constants
+const MAX_PAYLOAD_SIZE = '50mb';
+const MAX_HTML_SIZE = 500000; // 500KB
+
 app.use(cors());
 // Increase payload limit for large template JSON data
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.text({ type: ['text/*', 'application/xhtml+xml', 'application/xml'], limit: '50mb' }));
+app.use(express.json({ limit: MAX_PAYLOAD_SIZE }));
+app.use(express.urlencoded({ limit: MAX_PAYLOAD_SIZE, extended: true }));
+app.use(express.text({ type: ['text/*', 'application/xhtml+xml', 'application/xml'], limit: MAX_PAYLOAD_SIZE }));
 
 const BEE_CLIENT_ID = process.env.BEE_CLIENT_ID;
 const BEE_CLIENT_SECRET = process.env.BEE_CLIENT_SECRET;
@@ -250,7 +254,7 @@ app.post('/v1/html-importer', async (req, res) => {
     const sanitizationResult = sanitizeHtml(html);
     const sanitizedHtml = sanitizationResult.content;
 
-    if (sanitizedHtml.length > 500000) { // 500KB limit
+    if (sanitizedHtml.length > MAX_HTML_SIZE) {
       return res.status(413).json({ error: 'HTML content too large (max 500KB)' });
     }
 

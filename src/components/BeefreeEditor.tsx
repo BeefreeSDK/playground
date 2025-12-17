@@ -8,6 +8,7 @@ import type {
   BeefreeSDKInstance,
   ChangeResponse
 } from '../types/beefree';
+import { DEFAULT_BEE_CONFIG } from '../constants';
 
 /**
  * BeefreeEditor Component
@@ -212,55 +213,9 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         const sdk = new BeefreeSDK({ ...token, v2: true }) as unknown as BeefreeSDKInstance;
         sdkRef.current = sdk;
 
-        const defaultBeeConfig: BeefreeConfig = {
-          container: 'beefree-react-demo',
-          language: 'en-US',
-          sidebarPosition: 'left',
-          trackChanges: true, // Required for onChange callback to work
-          rowDisplayConditions: [
-            {
-              type: 'Last ordered catalog',
-              label: 'new',
-              description: 'Only new client will see this',
-              before: '{% if lastOrder.catalog == "New" %}',
-              after: '{% endif %}'
-            }
-          ],
-          rowsConfiguration: {
-            externalContentURLs: [
-              {
-                name: 'External resource',
-                value: 'https://qa-bee-playground-backend.getbee.io/api/customrows?ids=1,2,3,4'
-              }
-            ]
-          },
-          mergeTags: [
-            {
-              name: 'first name',
-              value: '[first-name]',
-              previewValue: 'John'
-            },
-            {
-              name: 'last name',
-              value: '[last-name]',
-              previewValue: 'Doe'
-            },
-            {
-              name: 'email',
-              value: '[email]',
-              previewValue: 'john.doe@gmail.com'
-            },
-            {
-              name: 'company',
-              value: '[company]',
-              previewValue: 'Company Srl'
-            }
-          ]
-        };
-
         // Step 3: Merge custom config with default config
         const finalBeeConfig: BeefreeConfig = {
-          ...(beeConfig || defaultBeeConfig),
+          ...(beeConfig || DEFAULT_BEE_CONFIG),
           // Ensure trackChanges is enabled (required for onChange callback)
           trackChanges: true,
           // onChange callback: Fired whenever user makes changes in the editor
@@ -318,7 +273,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         };
 
         if (onConfigChange && !beeConfig) {
-          onConfigChange(defaultBeeConfig);
+          onConfigChange(DEFAULT_BEE_CONFIG);
         }
 
         // Step 4: Load initial template from public/template.json

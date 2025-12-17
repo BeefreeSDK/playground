@@ -5,7 +5,7 @@ import BeeConfigSidebar from './components/BeeConfigSidebar';
 import ExportDropdown from './components/ExportDropdown';
 import HtmlImportModal from './components/HtmlImportModal';
 import ExportResultModal from './components/ExportResultModal';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { TemplateData, BeefreeTemplateJson, BeefreeConfig } from './types';
 import {
   loadTemplateHtml,
@@ -29,7 +29,6 @@ import {
 function App() {
   // Template state
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateData | null>(null); // Currently selected template from catalog
-  const [currentJson, setCurrentJson] = useState<BeefreeTemplateJson | null>(null); // Current template JSON in the editor
   const [beeConfig, setBeeConfig] = useState<BeefreeConfig | null>(null); // Current Beefree SDK configuration
   
   // Export modal states
@@ -44,9 +43,6 @@ function App() {
   
   // Import modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false); // Controls HTML import modal visibility
-  
-  // Ref to store last generated HTML (used for PDF and Image exports which require HTML)
-  const lastHtmlRef = useRef<string | undefined>(undefined);
 
   /**
    * Auto-select the initial template on app load
@@ -81,12 +77,14 @@ function App() {
     setSelectedTemplate(template);
   };
 
-  const handleTemplateLoad = useCallback((templateData: BeefreeTemplateJson) => {
-    setCurrentJson(templateData);
+  const handleTemplateLoad = useCallback((_templateData: BeefreeTemplateJson) => {
+    // Template is tracked in BeefreeEditor's currentTemplateRef via onChange callback
+    // No need to maintain duplicate state here
   }, []);
 
-  const handleJsonChange = useCallback((json: BeefreeTemplateJson) => {
-    setCurrentJson(json);
+  const handleJsonChange = useCallback((_json: BeefreeTemplateJson) => {
+    // Template is tracked in BeefreeEditor's currentTemplateRef via onChange callback
+    // No need to maintain duplicate state here
   }, []);
 
   /**
@@ -194,7 +192,6 @@ function App() {
       // Load pre-generated static HTML file
       const html = await loadTemplateHtml(templateId);
 
-      lastHtmlRef.current = html;
       setExportContent(html);
       setExportLoading(false);
 
@@ -363,8 +360,7 @@ function App() {
       if (importedData && typeof importedData === 'object') {
         // Clear selected template to prevent it from reloading
         setSelectedTemplate(null);
-        setCurrentJson(importedData);
-        
+
         const win = window as WindowWithBeefreeFunctions;
         if (win.loadTemplate) {
           await win.loadTemplate(importedData);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { BeefreeConfig } from '../types/beefree';
+import { DEFAULT_BEE_CONFIG } from '../constants';
 
 /**
  * BeeConfigSidebar Component
@@ -225,63 +226,11 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
   };
 
   /**
-   * Get default configuration
-   * This MUST match the defaultBeeConfig in BeefreeEditor.tsx exactly
-   */
-  const getDefaultConfig = (): BeefreeConfig => {
-    return {
-      container: 'beefree-react-demo',
-      language: 'en-US',
-      sidebarPosition: 'left',
-      trackChanges: true,
-      rowDisplayConditions: [
-        {
-          type: 'Last ordered catalog',
-          label: 'new',
-          description: 'Only new client will see this',
-          before: '{% if lastOrder.catalog == "New" %}',
-          after: '{% endif %}'
-        }
-      ],
-      rowsConfiguration: {
-        externalContentURLs: [
-          {
-            name: 'External resource',
-            value: 'https://qa-bee-playground-backend.getbee.io/api/customrows?ids=1,2,3,4'
-          }
-        ]
-      },
-      mergeTags: [
-        {
-          name: 'first name',
-          value: '[first-name]',
-          previewValue: 'John'
-        },
-        {
-          name: 'last name',
-          value: '[last-name]',
-          previewValue: 'Doe'
-        },
-        {
-          name: 'email',
-          value: '[email]',
-          previewValue: 'john.doe@gmail.com'
-        },
-        {
-          name: 'company',
-          value: '[company]',
-          previewValue: 'Company Srl'
-        }
-      ]
-    };
-  };
-
-  /**
    * Reset to Default Configuration
    * Loads the default config and applies it
    */
   const resetToDefault = () => {
-    const defaultConfig = getDefaultConfig();
+    const defaultConfig = { ...DEFAULT_BEE_CONFIG };
     setConfigText(JSON.stringify(defaultConfig, null, 2));
     setError('');
   };
@@ -291,7 +240,7 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
    * Resets config and immediately applies it (refreshes builder)
    */
   const handleResetAndApply = async () => {
-    const defaultConfig = getDefaultConfig();
+    const defaultConfig = { ...DEFAULT_BEE_CONFIG };
     setConfigText(JSON.stringify(defaultConfig, null, 2));
     setError('');
     setIsApplying(true);
@@ -318,7 +267,7 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
 
     try {
       const currentParsed = JSON.parse(configText);
-      const defaultConfig = getDefaultConfig();
+      const defaultConfig = { ...DEFAULT_BEE_CONFIG };
 
       // Deep comparison of configs
       return JSON.stringify(currentParsed) !== JSON.stringify(defaultConfig);
