@@ -1562,27 +1562,3 @@ body {
     min-width: 150px;
   }
 }
-
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #1F2937;
-    --bg-secondary: #111827;
-    --bg-tertiary: #374151;
-    --border-color: #374151;
-    --border-dark: #4B5563;
-    --text-primary: #F9FAFB;
-    --text-secondary: #D1D5DB;
-    --text-tertiary: #9CA3AF;
-  }
-  
-  .btn-secondary {
-    background: var(--bg-tertiary);
-    color: var(--beefree-purple-light);
-  }
-  
-  .btn-sm {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-}

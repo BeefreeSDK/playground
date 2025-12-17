@@ -163,12 +163,6 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         if (onJsonChange) {
           onJsonChange(normalizedData);
         }
-        
-        // Clear the selected template to prevent it from reloading on re-renders
-        // This allows users to edit the template without it being reset
-        if (onTemplateSelectClear) {
-          onTemplateSelectClear();
-        }
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load template';
         console.error('Failed to load template:', err);
@@ -273,22 +267,21 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
           // Parameters: (jsonFile, response) where jsonFile is the updated template JSON
           onChange: (jsonFile: string | BeefreeTemplateJson, response?: ChangeResponse) => {
             const templateData = typeof jsonFile === 'string' ? JSON.parse(jsonFile) : jsonFile;
-            
+
             // Log the template JSON to browser console
             console.log('📝 onChange - Template JSON:', templateData);
             if (response) {
               console.log('📝 onChange - Change details:', response);
             }
-            
+
             // Update ref with latest template state (used for exports, etc.)
             currentTemplateRef.current = templateData;
             console.log('onChange fired - updated currentTemplateRef');
-            
+
             // Notify parent components of changes
             if (onJsonChange) {
               onJsonChange(templateData);
             }
-            onTemplateLoad(templateData);
           },
           // onSave callback: Fired when user saves the template
           // Parameters: (jsonFile, htmlFile, ampHtml, templateVersion, language)
@@ -520,13 +513,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         await sdkRef.current.load(normalizedData);
         currentTemplateRef.current = normalizedData;
         onTemplateLoad(normalizedData);
-        
-        // Clear the selected template to prevent it from reloading on re-renders
-        // This allows users to edit the template without it being reset
-        if (onTemplateSelectClear) {
-          onTemplateSelectClear();
-        }
-        
+
         setLoading(false);
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -539,7 +526,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
     if (isInitialized && selectedTemplate) {
       loadTemplate();
     }
-  }, [selectedTemplate, isInitialized, onTemplateLoad, onTemplateSelectClear]);
+  }, [selectedTemplate?.id, isInitialized, onTemplateLoad]);
 
   return (
     <div className="editor-container">

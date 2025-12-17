@@ -1,0 +1,138 @@
+[Image]
+
+[Get started](https://example.com/)
+
+# The best embeddable 
+drag-and-drop email builder 
+for SaaS
+------------------------------------------------------------
+
+## Intuitive visual no-code builders for email, 
+landing pages, popups.
+-----------------------------------------------------------------------
+
+Designed to embed seamlessly into SaaS products, offering 
+a delightful end-user experience.
+
+[Get started](https://example.com/)
+
+## Add a catchy title here
+--------------------------
+
+Drag in a Paragraph block and start typing.
+
+**Column 1**
+
+👉 Column name
+
+**Column 2**
+
+Column purpose
+
+- Use a List block to organize ideas and steps
+
+[Add CTA to your design](https://example.com/)
+
+✏️ Click to edit
+
+📊 Create a table
+
+Edit content
+
+Copy this
+
+[Image]
+
+## Engagement, Speed & Reliability
+----------------------------------
+
+Beefree SDK boosts user engagement, reduces churn, integrates in under 30 days, is fully customizable and low-maintenance, and delivers enterprise-grade security with high uptime.
+
+[Learn more](https://example.com/)
+
+## Developer control & flexibility
+----------------------------------
+
+Beefree SDK lets you control branding and features, extend functionality with APIs and custom tools, and integrate AI to speed up content creation.
+
+[Learn more](https://example.com/)
+
+[Image]
+
+# 1,100+
+--------
+
+SaaS platforms use Beefree SDK
+
+# 80%
+-----
+
+integrate 
+in ≤ 3 weeks
+
+# 65%
+-----
+
+see ROI 
+in 6 months
+
+# 89%
+-----
+
+would recommend it
+
+[Image]
+
+## Faster, Cleaner, Smarter Design
+----------------------------------
+
+Enhance your editor with tools like File Manager and Template Catalog API for smooth workflows. Use AddOns and reusable content blocks to speed creation and maintain consistent designs. Import HTML and create custom extensions to fully adapt the editor to your product.
+
+
+
+[Learn more](https://example.com/)
+
+## Security, stability, scalability
+-----------------------------------
+
+Beefree SDK runs on AWS auto-scaling infrastructure, offers enterprise-grade security and compliance, and is built to support SaaS products at any stage of growth.
+
+[Learn more](https://example.com/)
+
+[Image]
+
+## Give your users a seamless experience
+----------------------------------------
+
+[Image]
+
+Clean, intuitive UX
+
+
+
+[Image]
+
+Drag-and-drop, no-code content creation
+
+
+
+[Image]
+
+Outlook-ready email rendering
+
+
+
+[Image]
+
+AI text assistant built-in for faster writing, translation & tone suggestions
+
+[Image]
+
+* [social icon](https://www.facebook.com/)
+* [social icon](https://www.twitter.com/)
+* [social icon](https://www.linkedin.com/)
+* [social icon](https://www.instagram.com/)
+
+[About us](#)[Blog](#)[Services](#)[Unsubscribe](#)
+
+****© Bee Content Design**, Inc. San Francisco, CA | Part of Growens**

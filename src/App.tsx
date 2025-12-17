@@ -5,8 +5,15 @@ import BeeConfigSidebar from './components/BeeConfigSidebar';
 import ExportDropdown from './components/ExportDropdown';
 import HtmlImportModal from './components/HtmlImportModal';
 import ExportResultModal from './components/ExportResultModal';
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import type { TemplateData, BeefreeTemplateJson, BeefreeConfig } from './types';
+import {
+  loadTemplateHtml,
+  loadTemplatePlainText,
+  getTemplatePdfUrl,
+  getTemplateImageUrl,
+  loadTemplate
+} from './services/localTemplates';
 
 /**
  * Main Application Component
@@ -42,19 +49,45 @@ function App() {
   const lastHtmlRef = useRef<string | undefined>(undefined);
 
   /**
+   * Auto-select the initial template on app load
+   */
+  useEffect(() => {
+    const loadInitialTemplate = async () => {
+      try {
+        const initialTemplateId = 'beefree-sdk-demo-template';
+        const templateData = await loadTemplate(initialTemplateId);
+
+        // Set the template as selected
+        setSelectedTemplate({
+          id: templateData.id,
+          name: templateData.name,
+          display_name: templateData.display_name || templateData.name,
+          title: templateData.title,
+          json_data: templateData.json_data,
+          data: { templateId: templateData.id }
+        });
+      } catch (err) {
+        console.error('Failed to load initial template:', err);
+      }
+    };
+
+    loadInitialTemplate();
+  }, []); // Empty dependency array - run once on mount
+
+  /**
    * Template Selection Handlers
    */
   const handleTemplateSelect = (template: TemplateData) => {
     setSelectedTemplate(template);
   };
 
-  const handleTemplateLoad = (templateData: BeefreeTemplateJson) => {
+  const handleTemplateLoad = useCallback((templateData: BeefreeTemplateJson) => {
     setCurrentJson(templateData);
-  };
+  }, []);
 
-  const handleJsonChange = (json: BeefreeTemplateJson) => {
+  const handleJsonChange = useCallback((json: BeefreeTemplateJson) => {
     setCurrentJson(json);
-  };
+  }, []);
 
   /**
    * Clear selected template after loading
@@ -139,13 +172,23 @@ function App() {
 
   /**
    * Export to HTML
-   * Converts the current template JSON to HTML using Content Services API
+   * Loads pre-generated static HTML file (no API call, no user edits included)
+   * WARNING: This exports the original template, not any changes the user made
    */
   const handleGetHtml = async () => {
-    if (!currentJson) {
-      alert('No template loaded. Please select a template first.');
+    if (!selectedTemplate || !selectedTemplate.data) {
+      alert('Please load a template from the dropdown first.');
       return;
     }
+
+    const templateId = (selectedTemplate.data as any).templateId;
+    if (!templateId) {
+      alert('Template ID not found');
+      return;
+    }
+
+    // Warn user about static export
+    alert('⚠️ Warning: This will export the ORIGINAL template. Any changes you made in the editor will NOT be included.');
 
     setExportType('html');
     setExportModalOpen(true);
@@ -153,31 +196,15 @@ function App() {
     setLoadingState('html', true);
 
     try {
-      const response = await fetch('/v1/message/html', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentJson),
-      });
+      // Load pre-generated static HTML file
+      const html = await loadTemplateHtml(templateId);
 
-      if (!response.ok) {
-        alert('Failed to convert to HTML');
-        setExportModalOpen(false);
-        return;
-      }
-
-      const raw = await response.text();
-      let html = raw;
-      try {
-        const maybeJson = JSON.parse(raw);
-        const candidate = (maybeJson && maybeJson.body && (maybeJson.body.html || maybeJson.body.result || maybeJson.body)) || undefined;
-        if (typeof candidate === 'string') {
-          html = candidate;
-        }
-      } catch {}
-      
       lastHtmlRef.current = html;
       setExportContent(html);
       setExportLoading(false);
+
+      // Show warning to user
+      console.warn('⚠️ Exported the original template. User edits are NOT included.');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       console.error('HTML export error:', err);
@@ -190,13 +217,23 @@ function App() {
 
   /**
    * Export to Plain Text
-   * Converts the current template JSON to plain text using Content Services API
+   * Loads pre-generated static plain text file (no API call, no user edits included)
+   * WARNING: This exports the original template, not any changes the user made
    */
   const handleGetPlainText = async () => {
-    if (!currentJson) {
-      alert('No template loaded. Please select a template first.');
+    if (!selectedTemplate || !selectedTemplate.data) {
+      alert('Please load a template from the dropdown first.');
       return;
     }
+
+    const templateId = (selectedTemplate.data as any).templateId;
+    if (!templateId) {
+      alert('Template ID not found');
+      return;
+    }
+
+    // Warn user about static export
+    alert('⚠️ Warning: This will export the ORIGINAL template. Any changes you made in the editor will NOT be included.');
 
     setExportType('plain-text');
     setExportModalOpen(true);
@@ -204,21 +241,14 @@ function App() {
     setLoadingState('plainText', true);
 
     try {
-      const response = await fetch('/v1/message/plain-text', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentJson),
-      });
+      // Load pre-generated static plain text file
+      const text = await loadTemplatePlainText(templateId);
 
-      if (!response.ok) {
-        alert('Failed to convert to Plain Text');
-        setExportModalOpen(false);
-        return;
-      }
-
-      const text = await response.text();
       setExportContent(text);
       setExportLoading(false);
+
+      // Show warning to user
+      console.warn('⚠️ Exported the original template. User edits are NOT included.');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       console.error('Plain text export error:', err);
@@ -231,14 +261,23 @@ function App() {
 
   /**
    * Export to PDF
-   * Auto-generates HTML first if needed, then creates PDF
-   * PDF export requires HTML (not JSON), so we convert first
+   * Uses pre-generated static PDF file (no API call, no user edits included)
+   * WARNING: This exports the original template, not any changes the user made
    */
   const handleGetPdf = async () => {
-    if (!currentJson) {
-      alert('No template loaded. Please select a template first.');
+    if (!selectedTemplate || !selectedTemplate.data) {
+      alert('Please load a template from the dropdown first.');
       return;
     }
+
+    const templateId = (selectedTemplate.data as any).templateId;
+    if (!templateId) {
+      alert('Template ID not found');
+      return;
+    }
+
+    // Warn user about static export
+    alert('⚠️ Warning: This will export the ORIGINAL template. Any changes you made in the editor will NOT be included.');
 
     setExportType('pdf');
     setExportModalOpen(true);
@@ -246,55 +285,14 @@ function App() {
     setLoadingState('pdf', true);
 
     try {
-      // Auto-generate HTML first if not already done
-      let html = lastHtmlRef.current;
-      if (!html) {
-        const htmlResponse = await fetch('/v1/message/html', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(currentJson),
-        });
+      // Get URL to pre-generated static PDF file
+      const pdfUrl = getTemplatePdfUrl(templateId);
 
-        if (!htmlResponse.ok) {
-          alert('Failed to generate HTML for PDF');
-          setExportModalOpen(false);
-          return;
-        }
-
-        const raw = await htmlResponse.text();
-        html = raw;
-        try {
-          const maybeJson = JSON.parse(raw);
-          const candidate = (maybeJson && maybeJson.body && (maybeJson.body.html || maybeJson.body.result || maybeJson.body)) || undefined;
-          if (typeof candidate === 'string') {
-            html = candidate;
-          }
-        } catch {}
-        
-        lastHtmlRef.current = html;
-      }
-
-      // Generate PDF
-      const response = await fetch('/v1/message/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          page_size: 'Full',
-          page_orientation: 'landscape',
-          html: html
-        }),
-      });
-
-      if (!response.ok) {
-        alert('Failed to convert to PDF');
-        setExportModalOpen(false);
-        return;
-      }
-
-      const data = await response.json();
-      const url = data && data.body && data.body.url ? data.body.url : undefined;
-      setExportPdfUrl(url || '');
+      setExportPdfUrl(pdfUrl);
       setExportLoading(false);
+
+      // Show warning to user
+      console.warn('⚠️ Exported the original template. User edits are NOT included.');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       console.error('PDF export error:', err);
@@ -307,14 +305,23 @@ function App() {
 
   /**
    * Export to Image (Thumbnail)
-   * Auto-generates HTML first if needed, then creates PNG image
-   * Image export requires HTML (not JSON), so we convert first
+   * Uses pre-generated static PNG file (no API call, no user edits included)
+   * WARNING: This exports the original template, not any changes the user made
    */
   const handleGetImage = async () => {
-    if (!currentJson) {
-      alert('No template loaded. Please select a template first.');
+    if (!selectedTemplate || !selectedTemplate.data) {
+      alert('Please load a template from the dropdown first.');
       return;
     }
+
+    const templateId = (selectedTemplate.data as any).templateId;
+    if (!templateId) {
+      alert('Template ID not found');
+      return;
+    }
+
+    // Warn user about static export
+    alert('⚠️ Warning: This will export the ORIGINAL template. Any changes you made in the editor will NOT be included.');
 
     setExportType('image');
     setExportModalOpen(true);
@@ -322,55 +329,14 @@ function App() {
     setLoadingState('image', true);
 
     try {
-      // Auto-generate HTML first if not already done
-      let html = lastHtmlRef.current;
-      if (!html) {
-        const htmlResponse = await fetch('/v1/message/html', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(currentJson),
-        });
+      // Get URL to pre-generated static image file
+      const imageUrl = getTemplateImageUrl(templateId);
 
-        if (!htmlResponse.ok) {
-          alert('Failed to generate HTML for image');
-          setExportModalOpen(false);
-          return;
-        }
-
-        const raw = await htmlResponse.text();
-        html = raw;
-        try {
-          const maybeJson = JSON.parse(raw);
-          const candidate = (maybeJson && maybeJson.body && (maybeJson.body.html || maybeJson.body.result || maybeJson.body)) || undefined;
-          if (typeof candidate === 'string') {
-            html = candidate;
-          }
-        } catch {}
-        
-        lastHtmlRef.current = html;
-      }
-
-      // Generate Image
-      const response = await fetch('/v1/message/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          file_type: 'png',
-          size: '1000',
-          html: html
-        }),
-      });
-
-      if (!response.ok) {
-        alert('Failed to create Image');
-        setExportModalOpen(false);
-        return;
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      setExportImageUrl(url);
+      setExportImageUrl(imageUrl);
       setExportLoading(false);
+
+      // Show warning to user
+      console.warn('⚠️ Exported the original template. User edits are NOT included.');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       console.error('Image export error:', err);

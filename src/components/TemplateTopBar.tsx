@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { templateCatalogAPI, handleApiError } from '../services/api';
+import { loadAllTemplates, loadTemplate } from '../services/localTemplates';
 import type { TemplateData } from '../types';
 
 /**
@@ -48,81 +48,33 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
   }, []);
 
   /**
-   * Fetch Templates from Template Catalog
-   * Retrieves first 10 templates and processes them into a consistent format
-   * Handles various API response shapes
+   * Load Templates from local static files
+   * No API calls - all templates are pre-generated static files
    */
   const fetchTemplates = async () => {
     setLoading(true);
     setError('');
 
     try {
-      // Fetch first 10 templates from the catalog using API abstraction
-      const data = await templateCatalogAPI.getTemplates({ limit: 10 });
+      // Load templates from static files
+      const localTemplates = await loadAllTemplates();
 
-      console.log('Templates API response:', data);
+      console.log('Loaded local templates:', localTemplates.length);
 
-      // Handle different response structures from the API
-      let templatesArray: unknown[] = [];
-
-      if (Array.isArray(data)) {
-        // API returned array directly
-        templatesArray = data;
-      } else if (data && typeof data === 'object') {
-        // API returned object, check for common property names
-        if ('templates' in data && Array.isArray(data.templates)) {
-          templatesArray = data.templates;
-        } else if ('results' in data && Array.isArray(data.results)) {
-          templatesArray = data.results;
-        } else if ('items' in data && Array.isArray(data.items)) {
-          templatesArray = data.items;
-        } else if ('data' in data && Array.isArray(data.data)) {
-          templatesArray = data.data;
-        }
-      }
-
-      console.log('Found templates:', templatesArray.length, 'templates');
-
-      // Process templates to ensure they have the structure we need
-      const processedTemplates: TemplateData[] = templatesArray
-        .filter((template): template is Record<string, unknown> => {
-          return template !== null && typeof template === 'object' &&
-                 ('id' in template || 'slug' in template);
-        })
-        .slice(0, 10)
-        .map((template, index): TemplateData => {
-          const templateObj = template as Record<string, unknown>;
-          return {
-            id: (typeof templateObj.id === 'string' ? templateObj.id :
-                 typeof templateObj.slug === 'string' ? templateObj.slug :
-                 `template-${index}`),
-            name: (typeof templateObj.title === 'string' ? templateObj.title :
-                   typeof templateObj.display_name === 'string' ? templateObj.display_name :
-                   typeof templateObj.name === 'string' ? templateObj.name :
-                   typeof templateObj.id === 'string' ? templateObj.id :
-                   'Untitled'),
-            display_name: typeof templateObj.display_name === 'string' ? templateObj.display_name :
-                          typeof templateObj.title === 'string' ? templateObj.title :
-                          typeof templateObj.name === 'string' ? templateObj.name :
-                          undefined,
-            title: typeof templateObj.title === 'string' ? templateObj.title : undefined,
-            json_data: templateObj.json_data as TemplateData['json_data'],
-            category: typeof templateObj.category === 'string' ? templateObj.category : undefined,
-            collection: typeof templateObj.collection === 'string' ? templateObj.collection : undefined,
-            designer: typeof templateObj.designer === 'string' ? templateObj.designer : undefined,
-            tags: Array.isArray(templateObj.tags) ? templateObj.tags as string[] : undefined,
-            thumbnail: typeof templateObj.thumbnail === 'string' ? templateObj.thumbnail : undefined,
-            data: templateObj
-          };
-        });
+      // Convert to TemplateData format
+      const processedTemplates: TemplateData[] = localTemplates.map(template => ({
+        id: template.id,
+        name: template.name,
+        display_name: template.name,
+        title: template.name
+      }));
 
       setTemplates(processedTemplates);
-      console.log('Processed templates (first 10):', processedTemplates.length);
       console.log('Template names:', processedTemplates.map(t => t.name));
     } catch (err: unknown) {
-      const errorMessage = handleApiError(err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load templates';
       setError(errorMessage);
-      console.error('Error fetching templates:', err);
+      console.error('Error loading templates:', err);
       setTemplates([]);
     } finally {
       setLoading(false);
@@ -201,38 +153,29 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
               value={selectedTemplate?.id || ''}
               onChange={async (e) => {
                 const selectedId = e.target.value;
-                const template = templates.find(t => t.id === selectedId);
-                if (template) {
-                  // If template already has json_data, use it directly
-                  if (template.json_data) {
-                    onTemplateSelect({
-                      id: template.id,
-                      name: template.display_name || template.name,
-                      display_name: template.display_name,
-                      json_data: template.json_data,
-                      data: template
-                    });
-                  } else {
-                    // Fetch full template details including json_data
-                    try {
-                      setLoading(true);
-                      const fullTemplate = await templateCatalogAPI.getTemplate(selectedId);
+                if (!selectedId) return;
 
-                      onTemplateSelect({
-                        id: template.id,
-                        name: template.display_name || template.name,
-                        display_name: template.display_name,
-                        json_data: (fullTemplate.json_data || fullTemplate) as TemplateData['json_data'],
-                        data: fullTemplate.data || fullTemplate
-                      });
-                    } catch (err: unknown) {
-                      const errorMessage = handleApiError(err);
-                      console.error('Failed to fetch template details:', err);
-                      setError(errorMessage);
-                    } finally {
-                      setLoading(false);
-                    }
-                  }
+                try {
+                  setLoading(true);
+                  setError('');
+
+                  // Load template JSON from static file
+                  const fullTemplate = await loadTemplate(selectedId);
+
+                  onTemplateSelect({
+                    id: fullTemplate.id,
+                    name: fullTemplate.name,
+                    display_name: fullTemplate.display_name || fullTemplate.name,
+                    json_data: fullTemplate.json_data,
+                    // Store template ID for exports
+                    data: { templateId: fullTemplate.id }
+                  });
+                } catch (err: unknown) {
+                  const errorMessage = err instanceof Error ? err.message : 'Failed to load template';
+                  console.error('Failed to load template:', err);
+                  setError(errorMessage);
+                } finally {
+                  setLoading(false);
                 }
               }}
             >
