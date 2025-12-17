@@ -42,11 +42,6 @@ public/templates/
     └── ...other exports...
 ```
 
-**Run the script**:
-```bash
-node scripts/export-templates.js
-```
-
 ### Local Templates Service
 
 The `src/services/localTemplates.ts` service provides functions to load static templates:
@@ -153,19 +148,21 @@ const handleGetHtml = async () => {
 ### Limitations
 
 1. **User Edits Not Saved** - Exports always show original template
-2. **Build-Time Generation** - New templates require running export script
-3. **Storage Requirements** - All export formats stored as static files
+2. **Storage Requirements** - All export formats stored as static files
 
 ### Best Practices
 
 1. **Always warn users** - Show alert before export that edits won't be included
-2. **Run export script** - After adding new templates or updating existing ones
-3. **Version control** - Commit all generated files to git
-4. **Clear communication** - Document the static export behavior in UI
+2. **Version control** - Commit all generated files to git
+3. **Clear communication** - Document the static export behavior in UI
+
+> **Note**: If you want to see sample code for real-time Content Services API integration, visit the official Beefree SDK code samples repository.
 
 ---
 
 ## Export Endpoints (Content Services API)
+
+> **Note**: This section is kept for reference only. The current application uses pre-generated static exports instead of real-time Content Services API calls. For working examples of Content Services API integration, visit the official Beefree SDK code samples repository.
 
 ### Overview
 The Content Services API provides endpoints to export Beefree designs to various formats: HTML, Plain Text, PDF, and Image. The key to making these work correctly is understanding the proper request/response flow and data handling.

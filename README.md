@@ -23,7 +23,7 @@ A comprehensive demonstration of Beefree SDK integration featuring Template Cata
 - One-click import
 
 ### 📤 Exports
-Content Services API exports are emulated. This means that all exports are static files generated at build time. User edits in the editor are NOT included in exports. A warning is displayed before each export.
+Content Services API exports are emulated. This means that all exports are static files generated at build time. User edits in the editor are NOT included in exports. A warning is displayed before each export. If you want to see some sample code to interact with Content Services API, head to the official SDK code sample official repo.
 
 ### 🎨 Configuration Toggles
 - **Apply Custom CSS** - Inject external CSS stylesheet
@@ -115,24 +115,17 @@ playground-demo/
 - **React 18** + **TypeScript** - UI framework
 - **Vite** - Build tool and dev server
 - **Beefree SDK 9.2.1** - Email/page builder
-- **Vercel Serverless Functions** - Backend
+- **Node.js/Express** - Backend
 - **Axios** - HTTP client
 
 ---
 
 ## 📊 API Endpoints
 
-### Serverless Functions (2 total)
-
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/proxy/bee-auth` | POST | Authenticate with Beefree |
 | `/v1/html-importer` | POST | Convert HTML to Beefree JSON |
-
-**Vercel Free Tier:** 12 function limit
-**Current Usage:** 2 functions ✅
-
-> **Note**: Content Services API endpoints (`/v1/message/*`) are not needed as all exports are pre-generated static files.
 
 ---
 
