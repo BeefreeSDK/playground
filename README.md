@@ -2,8 +2,6 @@
 
 A comprehensive demonstration of Beefree SDK integration featuring Template Catalog, Content Services exports, HTML Import, configuration toggles, and real-time change tracking.
 
-**Ready for team review** ✅ - All documentation updated, security best practices applied, clean code standards enforced.
-
 ![Beefree SDK](https://d15k2d11r6t6rl.cloudfront.net/pub/bfra/bs0kfqbg/tqu/rwx/rj4/Logo%20version%3DColored%2C%20Name%3DOn.svg)
 
 ---
@@ -19,24 +17,13 @@ A comprehensive demonstration of Beefree SDK integration featuring Template Cata
 - Module grouping configuration
 - Editable beeConfig with live preview
 
-### 📚 Static Template System
-- 9 pre-exported professional templates
-- Initial template auto-selected on app load
-- One-click template loading
-- Seamless template switching
-
-### 📤 Static Export System
-- **HTML Export** - Pre-generated responsive HTML
-- **Plain Text Export** - Pre-generated text-only version
-- **PDF Export** - Pre-generated PDF documents
-- **Image Export** - Pre-generated PNG thumbnails
-
-> **Note**: All exports are static files generated at build time. User edits in the editor are NOT included in exports. A warning is displayed before each export.
-
 ### 📥 HTML Import
 - Load sample newsletter template
 - Converts HTML → Beefree JSON
 - One-click import
+
+### 📤 Exports
+Content Services API exports are emulated. This means that all exports are static files generated at build time. User edits in the editor are NOT included in exports. A warning is displayed before each export.
 
 ### 🎨 Configuration Toggles
 - **Apply Custom CSS** - Inject external CSS stylesheet
@@ -116,8 +103,6 @@ playground-demo/
 │           ├── *.pdf             # PDF versions
 │           └── *.png             # Image versions
 │
-├── scripts/
-│   └── export-templates.js       # Template export script
 ├── proxy-server.js               # Express server (local dev)
 ├── vercel.json                   # Vercel configuration
 └── package.json                  # Dependencies
@@ -137,13 +122,11 @@ playground-demo/
 
 ## 📊 API Endpoints
 
-### Serverless Functions (8 total)
+### Serverless Functions (6 total)
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/proxy/bee-auth` | POST | Authenticate with Beefree |
-| `/api/templates` | GET | List templates from catalog |
-| `/api/templates/{id}` | GET | Get single template |
 | `/v1/html-importer` | POST | Convert HTML to Beefree JSON |
 | `/v1/message/html` | POST | Export template to HTML |
 | `/v1/message/plain-text` | POST | Export template to plain text |
@@ -151,7 +134,7 @@ playground-demo/
 | `/v1/message/image` | POST | Export HTML to PNG image |
 
 **Vercel Free Tier:** 12 function limit
-**Current Usage:** 8 functions ✅
+**Current Usage:** 6 functions ✅
 
 ---
 

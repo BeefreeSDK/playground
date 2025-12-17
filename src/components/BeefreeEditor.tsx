@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { authAPI, templateCatalogAPI } from '../services/api';
+import { authAPI } from '../services/api';
 import BeefreeSDK from '@beefree.io/sdk';
 import type {
   TemplateData,
@@ -414,6 +414,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
 
         let templateData: unknown;
 
+        // All static templates include json_data property
         if (selectedTemplate.json_data) {
           templateData = selectedTemplate.json_data;
         } else if (selectedTemplate.data && typeof selectedTemplate.data === 'object') {
@@ -422,84 +423,6 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
             templateData = data.json_data;
           } else {
             templateData = selectedTemplate.data;
-          }
-        } else {
-          try {
-            const fullTemplate = await templateCatalogAPI.getTemplate(selectedTemplate.id);
-            templateData = fullTemplate.json_data || fullTemplate;
-          } catch (err) {
-            console.error('Failed to fetch template data:', err);
-            templateData = {
-              page: {
-                body: {
-                  container: {
-                    style: {
-                      "background-color": "#fff"
-                    }
-                  },
-                  content: {
-                    computedStyle: {
-                      linkColor: "#8a3b8f",
-                      messageBackgroundColor: "transparent",
-                      messageWidth: "650px"
-                    },
-                    style: {
-                      color: "#000000",
-                      "font-family": "Lato, Tahoma, Verdana, Segoe, sans-serif"
-                    }
-                  },
-                  type: "mailup-bee-page-properties"
-                },
-                rows: [
-                  {
-                    container: {
-                      style: {
-                        "background-color": "transparent"
-                      }
-                    },
-                    content: {
-                      style: {
-                        "background-color": "transparent",
-                        color: "#000000",
-                        width: "500px"
-                      }
-                    },
-                    columns: [
-                      {
-                        style: {
-                          "background-color": "transparent",
-                          "padding-bottom": "5px",
-                          "padding-top": "5px"
-                        },
-                        modules: [
-                          {
-                            type: "mailup-bee-newsletter-modules-heading",
-                            descriptor: {
-                              heading: {
-                                title: "h1",
-                                text: selectedTemplate.name || "Template",
-                                style: {
-                                  color: "#555555",
-                                  "font-size": "23px",
-                                  "font-family": "inherit",
-                                  "line-height": "120%",
-                                  "text-align": "left",
-                                  "font-weight": "700"
-                                }
-                              },
-                              style: {
-                                width: "100%",
-                                "text-align": "center"
-                              }
-                            }
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            };
           }
         }
 

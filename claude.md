@@ -42,34 +42,6 @@ public/templates/
     └── ...other exports...
 ```
 
-### Export Script
-
-The `scripts/export-templates.js` script generates all static files:
-
-```javascript
-// 1. Process initial template from /public/template.json
-const initialTemplatePath = path.join(__dirname, '../public/template.json');
-const initialTemplateJson = JSON.parse(fs.readFileSync(initialTemplatePath, 'utf8'));
-const templateId = 'beefree-sdk-demo-template';
-
-// 2. Generate all export formats using Content Services API
-const html = await convertToHtml(initialTemplateJson);
-const plainText = await convertToPlainText(initialTemplateJson);
-const pdfBuffer = await convertToPdf(html);
-const imageBuffer = await convertToImage(html);
-
-// 3. Save all formats
-fs.writeFileSync(path.join(templatesDir, `${templateId}.json`), JSON.stringify(templateData));
-fs.writeFileSync(path.join(exportsDir, `${templateId}.html`), html);
-fs.writeFileSync(path.join(exportsDir, `${templateId}.txt`), plainText);
-fs.writeFileSync(path.join(exportsDir, `${templateId}.pdf`), pdfBuffer);
-fs.writeFileSync(path.join(exportsDir, `${templateId}.png`), imageBuffer);
-
-// 4. Fetch additional templates from Template Catalog API
-const templates = await fetchTemplates();
-// ... repeat export process for each template
-```
-
 **Run the script**:
 ```bash
 node scripts/export-templates.js

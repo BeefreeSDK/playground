@@ -47,58 +47,6 @@ app.post('/proxy/bee-auth', async (req, res) => {
 });
 
 // Template Catalog API endpoints (note: Vite rewrites /api -> '')
-app.get('/templates', async (req, res) => {
-  try {
-    if (!TEMPLATE_CATALOG_API_TOKEN) {
-      return res.status(500).json({ error: 'Template Catalog API Token not configured' });
-    }
-
-    const { category, collection, designer, tag, limit = 20, offset = 0 } = req.query;
-    
-    const params = new URLSearchParams();
-    if (category) params.append('category', category);
-    if (collection) params.append('collection', collection);
-    if (designer) params.append('designer', designer);
-    if (tag) params.append('tag', tag);
-    if (limit) params.append('limit', limit);
-    if (offset) params.append('offset', offset);
-    
-    const response = await axios.get(`${TEMPLATE_CATALOG_API_URL}/templates?${params.toString()}`, {
-      headers: {
-        'Authorization': `Bearer ${TEMPLATE_CATALOG_API_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    res.json(response.data);
-  } catch (error) {
-    console.error('Template catalog error:', error.message);
-    res.status(500).json({ error: 'Failed to fetch templates' });
-  }
-});
-
-app.get('/templates/:id', async (req, res) => {
-  try {
-    if (!TEMPLATE_CATALOG_API_TOKEN) {
-      return res.status(500).json({ error: 'Template Catalog API Token not configured' });
-    }
-
-    const { id } = req.params;
-    
-    const response = await axios.get(`${TEMPLATE_CATALOG_API_URL}/templates/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${TEMPLATE_CATALOG_API_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    res.json(response.data);
-  } catch (error) {
-    console.error('Template fetch error:', error.message);
-    res.status(500).json({ error: 'Failed to fetch template' });
-  }
-});
-
 app.get('/categories', async (req, res) => {
   try {
     if (!TEMPLATE_CATALOG_API_TOKEN) {
