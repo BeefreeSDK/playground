@@ -18,9 +18,6 @@ const BEE_CLIENT_ID = process.env.BEE_CLIENT_ID;
 const BEE_CLIENT_SECRET = process.env.BEE_CLIENT_SECRET;
 const TEMPLATE_CATALOG_API_URL = process.env.TEMPLATE_CATALOG_API_URL || 'https://api.getbee.io/v1/catalog';
 const TEMPLATE_CATALOG_API_TOKEN = process.env.TEMPLATE_CATALOG_API_TOKEN;
-const CS_API_TOKEN = process.env.CS_API_TOKEN;
-const RAW_CS_TOKEN = CS_API_TOKEN || '';
-const CS_AUTH = RAW_CS_TOKEN.startsWith('Bearer ') ? RAW_CS_TOKEN : (RAW_CS_TOKEN ? `Bearer ${RAW_CS_TOKEN}` : '');
 const HTML_IMPORTER_API_KEY = process.env.HTML_IMPORTER_API_KEY;
 const HTML_IMPORTER_URL = process.env.HTML_IMPORTER_URL || 'https://api.getbee.io/v1/conversion/html-to-json';
 
@@ -191,54 +188,6 @@ app.get('/tags', async (req, res) => {
     console.error('Tags error:', error.message);
     res.status(500).json({ error: 'Failed to fetch tags' });
   }
-});
-
-// Helper to forward POST requests to Content Services API (v1)
-const forwardPost = async (targetUrl, req, res, responseType = 'json') => {
-  if (!CS_AUTH) {
-    res.status(500).json({ error: 'CS_API_TOKEN is not configured' });
-    return;
-  }
-  try {
-    const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
-    const response = await axios.post(targetUrl, payload, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': CS_AUTH
-      },
-      responseType
-    });
-
-    if (responseType === 'arraybuffer') {
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Content-Disposition', 'inline');
-      res.status(200).send(response.data);
-      return;
-    }
-    res.status(200).send(response.data);
-  } catch (error) {
-    const details = (error && error.response && error.response.data) || error.message || 'Unknown error';
-    console.error('CS API forward error:', details);
-    res.status(500).json({ message: `Error exporting from ${targetUrl}`, details });
-  }
-};
-
-// Content Services API Export Endpoints
-app.post('/v1/message/html', async (req, res) => {
-  await forwardPost('https://api.getbee.io/v1/message/html', req, res);
-});
-
-app.post('/v1/message/plain-text', async (req, res) => {
-  await forwardPost('https://api.getbee.io/v1/message/plain-text', req, res);
-});
-
-app.post('/v1/message/pdf', async (req, res) => {
-  await forwardPost('https://api.getbee.io/v1/message/pdf', req, res);
-});
-
-// Image (returns binary)
-app.post('/v1/message/image', async (req, res) => {
-  await forwardPost('https://api.getbee.io/v1/message/image', req, res, 'arraybuffer');
 });
 
 // HTML Sanitization function

@@ -122,19 +122,17 @@ playground-demo/
 
 ## 📊 API Endpoints
 
-### Serverless Functions (6 total)
+### Serverless Functions (2 total)
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/proxy/bee-auth` | POST | Authenticate with Beefree |
 | `/v1/html-importer` | POST | Convert HTML to Beefree JSON |
-| `/v1/message/html` | POST | Export template to HTML |
-| `/v1/message/plain-text` | POST | Export template to plain text |
-| `/v1/message/pdf` | POST | Export HTML to PDF |
-| `/v1/message/image` | POST | Export HTML to PNG image |
 
 **Vercel Free Tier:** 12 function limit
-**Current Usage:** 6 functions ✅
+**Current Usage:** 2 functions ✅
+
+> **Note**: Content Services API endpoints (`/v1/message/*`) are not needed as all exports are pre-generated static files.
 
 ---
 
