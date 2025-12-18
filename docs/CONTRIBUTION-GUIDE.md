@@ -11,16 +11,8 @@ playground-demo/
 ├── api/                                  # Vercel Serverless Functions (Backend)
 │   ├── proxy/
 │   │   └── bee-auth.js                   # Beefree SDK authentication
-│   ├── templates/
-│   │   ├── index.js                      # Get templates list
-│   │   └── [id].js                       # Get single template by ID
 │   └── v1/
-│       ├── html-importer.js              # Convert HTML to Beefree JSON
-│       └── message/
-│           ├── html.js                   # Export to HTML
-│           ├── plain-text.js             # Export to plain text
-│           ├── pdf.js                    # Export to PDF
-│           └── image.js                  # Export to thumbnail image
+│       └── html-importer.js              # Convert HTML to Beefree JSON
 │
 ├── src/                                  # Frontend (React + TypeScript + Vite)
 │   ├── components/
@@ -33,15 +25,29 @@ playground-demo/
 │   │   ├── sampleHtml.ts                # Newsletter template HTML constant
 │   │   └── ExportResultModal.css        # Export modal styles
 │   ├── services/
-│   │   └── api.ts                        # API client utilities
+│   │   ├── api.ts                        # API client utilities
+│   │   └── localTemplates.ts            # Local template loading
 │   ├── types/
 │   │   └── index.ts                      # TypeScript type definitions
+│   ├── utils/
+│   │   └── exportHelpers.ts             # Export helper functions
 │   ├── App.tsx                           # Root component (orchestrates everything)
 │   ├── App.css                           # Global styles
 │   ├── main.tsx                          # React entry point
 │   └── index.css                         # Base CSS reset
 │
 ├── public/
+│   ├── assets/
+│   │   └── css/
+│   │       └── beefree-custom-design.css # Custom CSS for SDK
+│   ├── templates/                        # Static template files
+│   │   ├── index.json                    # Template catalog
+│   │   ├── *.json                        # Template JSON files
+│   │   └── exports/                      # Pre-generated exports
+│   │       ├── *.html                    # HTML exports
+│   │       ├── *.txt                     # Plain text exports
+│   │       ├── *.pdf                     # PDF exports
+│   │       └── *.png                     # Image exports
 │   └── template.json                     # Default template loaded on init
 │
 ├── proxy-server.js                       # Express server for local development
@@ -102,12 +108,17 @@ cp env.example .env
 
 Edit `.env` and add your API keys:
 ```
+# REQUIRED (for Beefree SDK)
 BEE_CLIENT_ID=your_client_id
 BEE_CLIENT_SECRET=your_client_secret
-TEMPLATE_CATALOG_API_TOKEN=your_catalog_token
-CS_API_TOKEN=your_cs_token
+
+# OPTIONAL (only for HTML Import feature)
 HTML_IMPORTER_API_KEY=your_importer_key
 ```
+
+**📝 Note:** This app uses **local static templates** from `public/templates/` and **pre-generated exports** from `public/templates/exports/`, so it does NOT need:
+- ~~TEMPLATE_CATALOG_API_TOKEN~~ (not used)
+- ~~CS_API_TOKEN~~ (not used)
 
 4. **Start development servers**
 
@@ -213,29 +224,30 @@ http://localhost:5173
 
 ---
 
-### 2. **Template Catalog Integration** (`src/components/TemplateTopBar.tsx`)
+### 2. **Local Template System** (`src/services/localTemplates.ts`, `src/components/TemplateTopBar.tsx`)
+
+**⚠️ IMPORTANT:** This app uses **local static templates**, NOT the Template Catalog API!
 
 **Flow:**
-1. Component mounts → Fetches templates via `/api/templates?limit=10`
-2. Displays 10 templates in dropdown
-3. User selects template → Fetches full template details via `/api/templates/{id}`
-4. Calls `onTemplateSelect` → Triggers `window.loadTemplate()` in BeefreeEditor
-5. Template loads into editor
+1. Component mounts → Calls `getTemplates()` from `localTemplates.ts`
+2. Fetches `/templates/index.json` (static file)
+3. Displays templates in dropdown
+4. User selects template → Calls `getTemplateById(id)`
+5. Fetches `/templates/{id}.json` (static file)
+6. Calls `onTemplateSelect` → Triggers `window.loadTemplate()` in BeefreeEditor
+7. Template loads into editor
 
-**API Endpoints:**
-- `GET /api/templates?limit=10` - List templates
-- `GET /api/templates/{id}` - Get single template with full JSON data
+**Template Files Location:**
+- `public/templates/index.json` - List of available templates
+- `public/templates/*.json` - Individual template JSON files
 
-**Backend Files:**
-- `api/templates/index.js` - List templates endpoint
-- `api/templates/[id].js` - Single template endpoint
+**Export Files Location:**
+- `public/templates/exports/*.html` - Pre-generated HTML exports
+- `public/templates/exports/*.txt` - Pre-generated plain text exports
+- `public/templates/exports/*.pdf` - Pre-generated PDF exports
+- `public/templates/exports/*.png` - Pre-generated image exports
 
-**Response Handling:**
-The code handles multiple response shapes from the Template Catalog API:
-```javascript
-// Various shapes the API might return
-templatesArray = data.results || data.templates || data.items || data.data || data
-```
+**⚠️ CRITICAL:** Exports show the ORIGINAL template, NOT user edits!
 
 ---
 
@@ -302,100 +314,77 @@ Clicking "Reset" loads default config with:
 
 ### 5. **Export Functionality** (All 4 Types)
 
-All exports follow the same pattern but handle different content types.
+**⚠️ IMPORTANT:** This app uses **pre-generated static exports**, NOT Content Services API!
 
-#### **A. HTML Export** (`src/App.tsx` lines 100-144)
+All exports load pre-generated files from `public/templates/exports/` directory.
+
+**⚠️ CRITICAL WARNING:** Exports display the ORIGINAL template as it was loaded from the template catalog. They do NOT include any user edits made in the editor!
+
+#### **A. HTML Export**
 
 **Flow:**
 1. User clicks "Export" → "HTML"
-2. Open export modal with loading state
-3. Send `currentJson` (template JSON) to `/v1/message/html`
-4. API returns HTML (may be wrapped in JSON)
-5. Parse response to extract HTML string
-6. Store in `lastHtmlRef` (for PDF/Image use)
-7. Display in modal with download button
+2. Gets current template ID from state
+3. Fetches `/templates/exports/{template-id}.html` (static file)
+4. Display in modal with download button
 
-**Backend:**
-- `api/v1/message/html.js`
-- Forwards to `https://api.getbee.io/v1/message/html`
+**File Location:** `public/templates/exports/*.html`
 
 ---
 
-#### **B. Plain Text Export** (`src/App.tsx` lines 150-184)
+#### **B. Plain Text Export**
 
 **Flow:**
 1. User clicks "Export" → "Plain Text"
-2. Send `currentJson` to `/v1/message/plain-text`
-3. API returns plain text string
+2. Gets current template ID from state
+3. Fetches `/templates/exports/{template-id}.txt` (static file)
 4. Display in modal with download button
 
-**Backend:**
-- `api/v1/message/plain-text.js`
-- Forwards to `https://api.getbee.io/v1/message/plain-text`
+**File Location:** `public/templates/exports/*.txt`
 
 ---
 
-#### **C. PDF Export** (`src/App.tsx` lines 191-259)
-
-**IMPORTANT: PDF requires HTML (not JSON)!**
+#### **C. PDF Export**
 
 **Flow:**
 1. User clicks "Export" → "PDF"
-2. **Auto-check if HTML exists in `lastHtmlRef`**
-   - If NO: First call `/v1/message/html` to generate HTML
-   - If YES: Use existing HTML
-3. Send HTML + parameters to `/v1/message/pdf`:
-   ```json
-   {
-     "page_size": "Full",
-     "page_orientation": "landscape",
-     "html": "<html>...</html>"
-   }
-   ```
-4. API returns JSON with `body.url` (PDF download link)
-5. Display "Open PDF" button in modal
+2. Gets current template ID from state
+3. Opens `/templates/exports/{template-id}.pdf` in new tab (static file)
 
-**Backend:**
-- `api/v1/message/pdf.js`
-- Forwards to `https://api.getbee.io/v1/message/pdf`
-
-**UX Improvement:**
-- No error message if HTML doesn't exist!
-- Modal shows "Creating PDF..." while auto-generating HTML
-- Seamless one-click experience
+**File Location:** `public/templates/exports/*.pdf`
 
 ---
 
-#### **D. Image Export** (`src/App.tsx` lines 266-334)
-
-**IMPORTANT: Image requires HTML (not JSON)!**
+#### **D. Image Export**
 
 **Flow:**
 1. User clicks "Export" → "Thumbnail Image"
-2. **Auto-check if HTML exists in `lastHtmlRef`**
-   - If NO: First call `/v1/message/html` to generate HTML
-   - If YES: Use existing HTML
-3. Send HTML + parameters to `/v1/message/image`:
-   ```json
-   {
-     "file_type": "png",
-     "size": "1000",
-     "html": "<html>...</html>"
-   }
-   ```
-4. API returns **binary data** (arraybuffer)
-5. Convert to Blob → Create object URL
-6. Display image in modal with download button
+2. Gets current template ID from state
+3. Fetches `/templates/exports/{template-id}.png` (static file)
+4. Display image in modal with download button
 
-**Backend:**
-- `api/v1/message/image.js`
-- Forwards to `https://api.getbee.io/v1/message/image`
-- Uses `responseType: 'arraybuffer'` for binary data
+**File Location:** `public/templates/exports/*.png`
 
-**UX Improvement:**
-- No error message if HTML doesn't exist!
-- Modal shows "Creating Thumbnail..." while auto-generating HTML
-- Seamless one-click experience
+---
+
+### **Generating Exports**
+
+Pre-generated exports are created using the `npm run export-templates` script, which:
+1. Reads all templates from `public/templates/*.json`
+2. Calls Beefree Content Services API to generate exports
+3. Saves exports to `public/templates/exports/`
+4. Updates `public/templates/index.json` with export file paths
+
+**Script Location:** `scripts/export-templates.js`
+
+**Run Command:**
+```bash
+npm run export-templates
+```
+
+**Requirements:**
+- `BEE_CLIENT_ID` and `BEE_CLIENT_SECRET` in `.env`
+- (Optional) `CS_API_TOKEN` for Content Services API
 
 ---
 
@@ -472,7 +461,6 @@ window.loadTemplate(importedData); // Loads into editor
 - Frontend: `http://localhost:5173` (Vite)
 - Backend: `http://localhost:3001` (Express)
 - Vite proxies API calls:
-  - `/api/*` → `http://localhost:3001`
   - `/proxy/*` → `http://localhost:3001`
   - `/v1/*` → `http://localhost:3001`
 
@@ -480,11 +468,12 @@ window.loadTemplate(importedData); // Loads into editor
 - Frontend: Static files served by Vercel
 - Backend: Serverless functions in `/api` directory
 - `vercel.json` routes requests:
-  - `/v1/message/*` → `/api/v1/message/*`
   - `/v1/*` → `/api/v1/*`
   - `/proxy/*` → `/api/proxy/*`
 
-### Serverless Functions (8 Total)
+### Serverless Functions (2 Total)
+
+**⚠️ IMPORTANT:** This app only has 2 API endpoints! Templates and exports are static files.
 
 **1. Authentication** (`api/proxy/bee-auth.js`)
 ```javascript
@@ -494,21 +483,9 @@ Returns: { token, ... }
 Forwards to: https://auth.getbee.io/loginV2
 ```
 
-**2. Template List** (`api/templates/index.js`)
-```javascript
-GET /api/templates?limit=10&offset=0
-Returns: Array of templates
-Forwards to: https://api.getbee.io/v1/catalog/templates
-```
+**Purpose:** Authenticate with Beefree SDK and get token for SDK initialization.
 
-**3. Single Template** (`api/templates/[id].js`)
-```javascript
-GET /api/templates/{id}
-Returns: Template with json_data
-Forwards to: https://api.getbee.io/v1/catalog/templates/{id}
-```
-
-**4. HTML Importer** (`api/v1/html-importer.js`)
+**2. HTML Importer** (`api/v1/html-importer.js`)
 ```javascript
 POST /v1/html-importer
 Body: { html: '<html>...</html>' }
@@ -517,32 +494,23 @@ Forwards to: https://api.getbee.io/v1/conversion/html-to-json
 Content-Type: text/html
 ```
 
-**5-8. Content Services Exports** (`api/v1/message/*.js`)
-```javascript
-// HTML
-POST /v1/message/html
-Body: Template JSON
-Returns: HTML string (may be wrapped in JSON)
+**Purpose:** Convert HTML to Beefree JSON format for loading into editor.
 
-// Plain Text
-POST /v1/message/plain-text
-Body: Template JSON
-Returns: Plain text string
+### Static File Serving
 
-// PDF
-POST /v1/message/pdf
-Body: { html, page_size, page_orientation }
-Returns: { body: { url: 'pdf-download-url' } }
+**Templates:**
+- `GET /templates/index.json` - List of available templates
+- `GET /templates/{id}.json` - Individual template JSON
 
-// Image
-POST /v1/message/image
-Body: { html, file_type, size }
-Returns: Binary PNG data (arraybuffer)
-```
+**Exports:**
+- `GET /templates/exports/{id}.html` - HTML export
+- `GET /templates/exports/{id}.txt` - Plain text export
+- `GET /templates/exports/{id}.pdf` - PDF export
+- `GET /templates/exports/{id}.png` - Image export
 
 ### Authorization Headers
 
-All external Beefree API calls use Bearer token authentication:
+Beefree API calls use Bearer token authentication:
 ```javascript
 headers: {
   'Authorization': `Bearer ${API_TOKEN}`,
@@ -784,18 +752,22 @@ Vercel automatically detects:
 Go to: Project Settings → Environment Variables
 
 ```
+# REQUIRED (for Beefree SDK)
 BEE_CLIENT_ID=your_client_id
 BEE_CLIENT_SECRET=your_client_secret
-TEMPLATE_CATALOG_API_TOKEN=your_catalog_token
-CS_API_TOKEN=your_content_services_token
+
+# OPTIONAL (only for HTML Import feature)
 HTML_IMPORTER_API_KEY=your_importer_key
 ```
 
 **Optional (have defaults):**
 ```
-TEMPLATE_CATALOG_API_URL=https://api.getbee.io/v1/catalog
 HTML_IMPORTER_URL=https://api.getbee.io/v1/conversion/html-to-json
 ```
+
+**📝 Note:** This app uses **local static templates** and **pre-generated exports**, so it does NOT need:
+- ~~TEMPLATE_CATALOG_API_TOKEN~~ (not used)
+- ~~CS_API_TOKEN~~ (not used)
 
 **IMPORTANT:** After adding/changing environment variables, click "Redeploy"!
 
@@ -824,9 +796,9 @@ git push origin main
 ### Function Limits
 
 **Vercel Free Tier:** Max 12 serverless functions
-**Current Usage:** 8 functions ✅
+**Current Usage:** 2 functions ✅
 
-If you need to add more endpoints, consolidate related endpoints into one file with dynamic routing.
+Plenty of room for expansion if needed!
 
 ### Debugging Vercel Deployments
 
@@ -842,8 +814,8 @@ If you need to add more endpoints, consolidate related endpoints into one file w
 
 **Common Issues:**
 - **"No template loaded"**: Missing initial template in `/public/template.json`
-- **"Failed to fetch templates"**: Check `TEMPLATE_CATALOG_API_TOKEN`
-- **"Failed to export"**: Check `CS_API_TOKEN`
+- **"Templates not loading"**: Check that `public/templates/index.json` and template files deployed correctly
+- **"Exports not working"**: Check that `public/templates/exports/` directory deployed correctly
 - **"Failed to import HTML"**: Check `HTML_IMPORTER_API_KEY`
 
 ---
@@ -1008,65 +980,51 @@ After deployment, test the same checklist on your Vercel URL.
 **Common Issues:**
 1. **APIs not working** → Check environment variables in Vercel
 2. **404 on API calls** → Check `vercel.json` rewrites
-3. **Builder loads but template catalog fails** → Check `TEMPLATE_CATALOG_API_TOKEN`
+3. **Builder loads but templates don't** → Check `public/templates/` files deployed correctly
 
 ---
 
 ## 📝 Making Changes
 
-### Adding a New Export Type
+### Adding New Templates
 
-1. **Create serverless function:**
-```javascript
-// api/v1/message/new-type.js
-import axios from 'axios';
-
-export default async function handler(req, res) {
-  const CS_API_TOKEN = process.env.CS_API_TOKEN;
-  const CS_AUTH = CS_API_TOKEN?.startsWith('Bearer ') 
-    ? CS_API_TOKEN 
-    : `Bearer ${CS_API_TOKEN}`;
-
-  const response = await axios.post(
-    'https://api.getbee.io/v1/message/new-type',
-    req.body,
-    { headers: { 'Authorization': CS_AUTH } }
-  );
-  
-  res.json(response.data);
-}
+1. **Add template JSON file:**
+```bash
+# Add your template JSON to public/templates/
+public/templates/my-new-template.json
 ```
 
-2. **Add to ExportDropdown.tsx:**
-```javascript
-<button onClick={() => handleExportAction(onExportNewType)}>
-  <span>New Type</span>
-</button>
+2. **Generate exports:**
+```bash
+npm run export-templates
+```
+This will automatically:
+- Generate HTML, PDF, Image, and Text exports
+- Update `public/templates/index.json`
+
+3. **Commit and deploy:**
+```bash
+git add public/templates/
+git commit -m "Add new template"
+git push origin main
 ```
 
-3. **Add handler in App.tsx:**
-```javascript
-const handleGetNewType = async () => {
-  // Similar pattern to handleGetHtml
-};
+### Regenerating All Exports
+
+If template files change:
+```bash
+npm run export-templates
 ```
 
-4. **Update vercel.json if needed:**
-```json
-{
-  "source": "/v1/message/new-type",
-  "destination": "/api/v1/message/new-type"
-}
-```
+This script:
+- Reads all templates from `public/templates/*.json`
+- Calls Beefree Content Services API
+- Saves exports to `public/templates/exports/`
+- Updates template index
 
-### Adding a New Template Catalog Filter
-
-1. **Update API call in TemplateTopBar.tsx:**
-```javascript
-const response = await axios.get('/api/templates?limit=10&category=newsletter');
-```
-
-2. **Backend automatically forwards** query parameters to Beefree API
+**Requirements:**
+- `BEE_CLIENT_ID` and `BEE_CLIENT_SECRET` in `.env`
+- (Optional) `CS_API_TOKEN` for Content Services API
 
 ### Modifying the Sample Newsletter
 
@@ -1080,6 +1038,29 @@ export const SAMPLE_NEWSLETTER_HTML = `<!DOCTYPE html>...`;
 - Avoid images (use emoji or text icons)
 - Maintain responsive table structure
 - Test with HTML Importer API before committing
+
+### Adding a New API Endpoint
+
+If you need to add a new backend endpoint:
+
+1. **Create serverless function:**
+```javascript
+// api/your-endpoint.js
+export default async function handler(req, res) {
+  // Your logic here
+  res.json({ success: true });
+}
+```
+
+2. **Update vercel.json if needed:**
+```json
+{
+  "source": "/your-path",
+  "destination": "/api/your-endpoint"
+}
+```
+
+3. **Add frontend handler in appropriate component**
 
 ---
 
@@ -1122,14 +1103,15 @@ console.error('Export error:', error.response?.data || error.message);
 - Invalid credentials
 - Fix: Check .env file or Vercel env vars
 
-**"Template Catalog API Token not configured"**
-- Missing TEMPLATE_CATALOG_API_TOKEN
-- Fix: Add to Vercel environment variables
+**"Templates not loading"**
+- Missing `public/templates/index.json`
+- Template JSON files not deployed
+- Fix: Check that template files exist and are committed
 
-**PDF/Image export fails**
-- Missing CS_API_TOKEN
-- HTML generation failed
-- Fix: Check CS_API_TOKEN, try exporting HTML first manually
+**"Exports not working"**
+- Missing export files in `public/templates/exports/`
+- Export files not deployed
+- Fix: Run `npm run export-templates` and commit the exports
 
 ---
 
@@ -1187,9 +1169,9 @@ HTML Importer sanitizes input to prevent XSS:
 
 ### Beefree Documentation
 - **SDK Docs**: https://docs.beefree.io/beefree-sdk
-- **Template Catalog API**: https://docs.beefree.io/beefree-sdk/apis/template-catalog-api
-- **Content Services API**: https://docs.beefree.io/beefree-sdk/apis/content-services-api
 - **HTML Importer**: https://docs.beefree.io/beefree-sdk/apis/html-importer-api
+- **Content Services API**: https://docs.beefree.io/beefree-sdk/apis/content-services-api (used by export-templates script)
+- **Template Catalog API**: https://docs.beefree.io/beefree-sdk/apis/template-catalog-api (not used in this app)
 
 ### Vercel Documentation
 - **Serverless Functions**: https://vercel.com/docs/functions
@@ -1389,14 +1371,20 @@ A: Yes! Just update to Vercel Pro and you get more functions (100+), longer time
 
 This playground demonstrates:
 - ✅ Beefree SDK integration
-- ✅ Template Catalog API
-- ✅ Content Services API (all export types)
-- ✅ HTML Importer API  
+- ✅ Local template system (static files)
+- ✅ Pre-generated exports (HTML, PDF, Image, Text)
+- ✅ HTML Importer API
 - ✅ Custom CSS injection
 - ✅ Editable beeConfig
 - ✅ Vercel serverless deployment
 
 All built with clean code, inline comments, and maintainable patterns!
+
+**Key Architecture:**
+- Templates served as static JSON files from `public/templates/`
+- Exports pre-generated and served from `public/templates/exports/`
+- Only 2 API endpoints (authentication + HTML importer)
+- Fast, scalable, and cost-effective!
 
 Happy coding! 🚀
 

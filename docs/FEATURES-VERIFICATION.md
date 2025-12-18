@@ -4,19 +4,36 @@ Use this guide to verify all features work correctly after deployment or changes
 
 ---
 
+## ⚠️ IMPORTANT ARCHITECTURE NOTES
+
+This app uses a **static file-based architecture**, NOT API-based:
+
+1. **Templates:** Served as static JSON files from `public/templates/`
+2. **Exports:** Pre-generated static files in `public/templates/exports/`
+3. **API Endpoints:** Only 2 (authentication + HTML importer)
+
+**CRITICAL LIMITATION:**
+- Exports show the ORIGINAL template as loaded from files
+- Exports do NOT include user edits made in the editor
+- This is by design to avoid API costs and improve performance
+
+---
+
 ## 🎯 Complete Feature List
 
 ### Core Features (Must Work)
 1. ✅ Beefree SDK Editor Initialization
-2. ✅ Template Catalog Integration
+2. ✅ Local Template System (Static Files)
 3. ✅ Template Loading
 4. ✅ Custom CSS Toggle
 5. ✅ BeeConfig Editor
-6. ✅ HTML Export
-7. ✅ Plain Text Export
-8. ✅ PDF Export (with auto-HTML)
-9. ✅ Image Export (with auto-HTML)
+6. ✅ HTML Export (Pre-generated)
+7. ✅ Plain Text Export (Pre-generated)
+8. ✅ PDF Export (Pre-generated)
+9. ✅ Image Export (Pre-generated)
 10. ✅ HTML Import (Sample Newsletter)
+
+**⚠️ IMPORTANT:** This app uses **local static templates** and **pre-generated exports**, NOT API-based systems!
 
 ---
 
@@ -47,27 +64,29 @@ Use this guide to verify all features work correctly after deployment or changes
 
 ---
 
-### 2. Template Catalog Integration ✅
+### 2. Local Template System ✅
+
+**⚠️ IMPORTANT:** Templates are loaded from **static files** in `public/templates/`, NOT from an API!
 
 **Expected Behavior:**
 - Template dropdown shows "Choose a template..." by default
-- Click dropdown → See 10 template names
+- Click dropdown → See list of template names
 - Names are readable (not IDs or undefined)
 
 **How to Test:**
 1. Look at top bar
 2. Click "Template:" dropdown
-3. Count templates (should be 10)
+3. Verify templates are listed
 
 **Success Criteria:**
-- Dropdown populates within 1 second
-- 10 templates listed
-- Template names are descriptive
+- Dropdown populates instantly
+- Templates listed with descriptive names
+- Template names match files in `public/templates/`
 
 **If It Fails:**
-- Check browser console Network tab for `/api/templates` error
-- Verify `TEMPLATE_CATALOG_API_TOKEN` in environment
-- Check Vercel function logs for `api/templates/index.js`
+- Check browser console Network tab for `/templates/index.json` error (404)
+- Verify `public/templates/index.json` exists
+- Check that template files deployed correctly
 
 ---
 
@@ -91,9 +110,9 @@ Use this guide to verify all features work correctly after deployment or changes
 - Selected template name shows on right
 
 **If It Fails:**
-- Check browser console for `/api/templates/{id}` error
-- Verify template has `json_data` property
-- Check Vercel function logs for `api/templates/[id].js`
+- Check browser console for `/templates/{id}.json` error (404)
+- Verify template JSON file exists in `public/templates/`
+- Check that template file is valid JSON
 
 ---
 
@@ -162,112 +181,128 @@ Use this guide to verify all features work correctly after deployment or changes
 
 ### 6. HTML Export ✅
 
+**⚠️ IMPORTANT:** HTML exports are **pre-generated static files**, NOT generated from API!
+
+**⚠️ CRITICAL WARNING:** Export shows the ORIGINAL template, NOT user edits made in the editor!
+
 **Expected Behavior:**
 - Click "Export" → "HTML"
 - Modal opens with "Exporting HTML..."
-- HTML code appears in textarea
+- Pre-generated HTML appears in textarea
 - "Download HTML" button available
 - Modal can be closed with X or outside click
 
 **How to Test:**
-1. Click "Export" dropdown button
-2. Click "HTML"
-3. Wait for modal
-4. Check HTML content
+1. Select a template from dropdown
+2. Click "Export" dropdown button
+3. Click "HTML"
+4. Check HTML content in modal
 
 **Success Criteria:**
 - Modal opens immediately
-- HTML appears within 1-2 seconds
+- HTML appears instantly (static file)
 - HTML is valid (contains `<html>`, `<body>`, etc.)
 - Download button works
+- **HTML matches ORIGINAL template, not any edits**
 
 **If It Fails:**
-- Check "No template loaded" error → Template didn't load
-- Check browser console for `/v1/message/html` 404
-- Verify `CS_API_TOKEN` in environment
-- Check Vercel function logs for `api/v1/message/html.js`
+- Check "No template selected" error → Select a template first
+- Check browser console for `/templates/exports/{id}.html` 404
+- Verify export file exists in `public/templates/exports/`
+- Run `npm run export-templates` to regenerate exports
 
 ---
 
 ### 7. Plain Text Export ✅
 
+**⚠️ IMPORTANT:** Plain text exports are **pre-generated static files**, NOT generated from API!
+
+**⚠️ CRITICAL WARNING:** Export shows the ORIGINAL template, NOT user edits made in the editor!
+
 **Expected Behavior:**
 - Click "Export" → "Plain Text"
 - Modal opens
-- Plain text version appears
+- Pre-generated plain text appears
 - "Download Text" button works
 
 **How to Test:**
-1. Click "Export" → "Plain Text"
-2. Check text content
-3. Click download
+1. Select a template from dropdown
+2. Click "Export" → "Plain Text"
+3. Check text content
+4. Click download
 
 **Success Criteria:**
 - Text is readable (no HTML tags)
-- Preserves content from template
+- Preserves content from ORIGINAL template
 - Download creates .txt file
+- **Text matches ORIGINAL template, not any edits**
 
 **If It Fails:**
-- Same debugging as HTML Export
-- Check `api/v1/message/plain-text.js` logs
+- Check "No template selected" error → Select a template first
+- Check browser console for `/templates/exports/{id}.txt` 404
+- Verify export file exists in `public/templates/exports/`
+- Run `npm run export-templates` to regenerate exports
 
 ---
 
-### 8. PDF Export (with Auto-HTML Generation) ✅
+### 8. PDF Export ✅
+
+**⚠️ IMPORTANT:** PDF exports are **pre-generated static files**, NOT generated from API!
+
+**⚠️ CRITICAL WARNING:** Export shows the ORIGINAL template, NOT user edits made in the editor!
 
 **Expected Behavior:**
 - Click "Export" → "PDF"
-- Modal opens with "Creating PDF..."
-- HTML auto-generates in background (if needed)
-- PDF link appears
-- "Open PDF in New Tab" opens PDF
+- Pre-generated PDF opens in new tab instantly
 
 **How to Test:**
-1. **Without HTML:** Click "Export" → "PDF" (before exporting HTML)
-2. Should still work! (auto-generates HTML)
-3. Wait 3-5 seconds
-4. PDF link appears
+1. Select a template from dropdown
+2. Click "Export" → "PDF"
+3. New tab opens with PDF
 
 **Success Criteria:**
-- No error about "Convert to HTML first"
-- Modal shows "Creating PDF..." during generation
-- PDF link works
-- PDF renders correctly
+- PDF opens instantly (static file)
+- PDF renders correctly in browser
+- **PDF matches ORIGINAL template, not any edits**
 
 **If It Fails:**
-- Check HTML auto-generation step (should see network call to `/v1/message/html`)
-- Check `/v1/message/pdf` endpoint
-- Verify `CS_API_TOKEN` in environment
-- Check Vercel logs for both html.js and pdf.js
+- Check "No template selected" error → Select a template first
+- Check browser console for `/templates/exports/{id}.pdf` 404
+- Verify export file exists in `public/templates/exports/`
+- Run `npm run export-templates` to regenerate exports
 
 ---
 
-### 9. Image Export (with Auto-HTML Generation) ✅
+### 9. Image Export ✅
+
+**⚠️ IMPORTANT:** Image exports are **pre-generated static files**, NOT generated from API!
+
+**⚠️ CRITICAL WARNING:** Export shows the ORIGINAL template, NOT user edits made in the editor!
 
 **Expected Behavior:**
 - Click "Export" → "Thumbnail Image"
-- Modal opens with "Creating Thumbnail..."
-- HTML auto-generates if needed
-- Thumbnail image appears
+- Modal opens
+- Pre-generated thumbnail image appears
 - "Download Image" button works
 
 **How to Test:**
-1. **Without HTML:** Click "Export" → "Thumbnail Image"
-2. Should still work! (auto-generates HTML)
-3. Wait 2-4 seconds
-4. Thumbnail appears in modal
+1. Select a template from dropdown
+2. Click "Export" → "Thumbnail Image"
+3. Check image in modal
+4. Click download
 
 **Success Criteria:**
-- No error about "Convert to HTML first"
-- Modal shows "Creating Thumbnail..." during generation
+- Modal opens immediately
+- Image appears instantly (static file)
 - Image displays correctly
 - Download creates .png file
+- **Image matches ORIGINAL template, not any edits**
 
 **If It Fails:**
-- Check HTML auto-generation (network tab)
-- Check `/v1/message/image` endpoint
-- Verify image Content-Type is `image/png`
-- Check Vercel logs for both html.js and image.js
+- Check "No template selected" error → Select a template first
+- Check browser console for `/templates/exports/{id}.png` 404
+- Verify export file exists in `public/templates/exports/`
+- Run `npm run export-templates` to regenerate exports
 
 ---
 
@@ -391,19 +426,23 @@ Use this guide to verify all features work correctly after deployment or changes
 
 ### Load Times (Expected)
 
+**⚠️ Note:** Using static files instead of APIs makes this app MUCH faster!
+
 | Operation | Time | Notes |
 |-----------|------|-------|
 | Initial page load | 1-2s | Includes SDK initialization |
 | Authentication | 100-200ms | Cached by Vercel |
-| Template list fetch | 400-600ms | 10 templates |
-| Single template fetch | 400-600ms | With JSON data |
-| HTML export | 1-2s | Template → HTML |
-| Plain text export | 1-2s | Template → Text |
-| PDF export | 3-5s | HTML generation + PDF |
-| Image export | 2-4s | HTML generation + Image |
-| HTML import | 3-6s | HTML → JSON conversion |
+| Template list fetch | <50ms | Static file (index.json) |
+| Single template fetch | <100ms | Static JSON file |
+| HTML export | <100ms | Pre-generated static file |
+| Plain text export | <100ms | Pre-generated static file |
+| PDF export | <100ms | Pre-generated static file |
+| Image export | <100ms | Pre-generated static file |
+| HTML import | 3-6s | API call to HTML Importer |
 
-**All within acceptable ranges for Vercel free tier!** ✅
+**MUCH faster than API-based approach!** ✅
+
+**Note:** Exports don't include user edits, so they're instant but show original template only.
 
 ---
 
@@ -412,14 +451,14 @@ Use this guide to verify all features work correctly after deployment or changes
 ### Cannot Deploy If These Fail:
 
 1. **Builder initialization** - Core functionality
-2. **HTML export** - Required for PDF/Image
-3. **Template loading** - From catalog or import
+2. **Template loading** - From local files
+3. **Authentication** - Required for SDK
 
 ### Can Deploy If These Have Issues:
 
-1. Template Catalog - Can use HTML import instead
-2. Custom CSS - Nice to have
-3. PDF/Image exports - HTML export still works
+1. **Exports** - Static files might be missing, can regenerate with `npm run export-templates`
+2. **Custom CSS** - Nice to have feature
+3. **HTML Import** - Optional feature, requires API key
 
 ---
 

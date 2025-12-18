@@ -39,17 +39,19 @@ Go to: **Project Settings → Environment Variables**
 
 Add these (copy from your `.env` file):
 
-#### Required Variables
+#### Required Variables (2 only!)
 - [ ] `BEE_CLIENT_ID` - Beefree SDK client ID
 - [ ] `BEE_CLIENT_SECRET` - Beefree SDK client secret
-- [ ] `TEMPLATE_CATALOG_API_TOKEN` - Template Catalog API token
-- [ ] `CS_API_TOKEN` - Content Services API token
-- [ ] `HTML_IMPORTER_API_KEY` - HTML Importer API key
 
-#### Optional Variables (Have Defaults)
-- [ ] `TEMPLATE_CATALOG_API_URL` (default: `https://api.getbee.io/v1/catalog`)
-- [ ] `HTML_IMPORTER_URL` (default: `https://api.getbee.io/v1/conversion/html-to-json`)
-- [ ] `PORT` (only for local dev, Vercel ignores this)
+#### Optional Variables
+- [ ] `HTML_IMPORTER_API_KEY` - HTML Importer API key (only needed for "Import HTML" feature)
+- [ ] `HTML_IMPORTER_URL` - Custom HTML importer endpoint (default: `https://api.getbee.io/v1/conversion/html-to-json`)
+
+**📝 Note:** This app uses **local static templates** and **pre-generated exports**, so these are NOT needed:
+- ~~TEMPLATE_CATALOG_API_TOKEN~~ (not used)
+- ~~TEMPLATE_CATALOG_API_URL~~ (not used)
+- ~~CS_API_TOKEN~~ (not used)
+- ~~PORT~~ (Vercel auto-assigns ports)
 
 **Important Settings:**
 - Set for **all environments** (Production, Preview, Development)
@@ -227,9 +229,9 @@ playground-demo/
    - Look for error message
 
 **Common Causes:**
-- Missing `TEMPLATE_CATALOG_API_TOKEN` in Vercel
-- Wrong token value
-- Token not set for "Production" environment
+- Templates are loaded from local files (`public/templates/index.json`)
+- Check that template files deployed correctly to Vercel
+- Check browser console for file loading errors
 
 **Fix:**
 1. Verify token in Vercel environment variables
@@ -247,14 +249,14 @@ playground-demo/
 3. Check Vercel function logs for that specific export
 
 **Common Causes:**
-- Missing `CS_API_TOKEN` in Vercel
-- Wrong token value
-- Routing issue in `vercel.json`
+- Exports are pre-generated static files in `public/templates/exports/`
+- Check that export files deployed correctly to Vercel
+- **Note:** Exports show the ORIGINAL template, NOT user edits
 
 **Fix:**
-1. Verify `CS_API_TOKEN` in Vercel
-2. Check `vercel.json` has correct rewrites
-3. Click "Redeploy"
+1. Verify `public/templates/exports/` directory exists in deployment
+2. Check browser Network tab for 404 errors on export files
+3. User edits are NOT saved - this is expected behavior
 
 ---
 

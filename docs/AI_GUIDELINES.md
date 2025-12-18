@@ -3,15 +3,15 @@
 This document serves as a comprehensive reference guide for implementing Beefree SDK features. Use this as a knowledge base when working with the Beefree SDK integration in this project.
 
 ## Table of Contents
-1. [Static Template System](#static-template-system) ⭐ **NEW**
-2. [Export Endpoints (Content Services API)](#export-endpoints-content-services-api)
-3. [Template Catalog API](#template-catalog-api)
+1. [Static Template System](#static-template-system) ⭐ **IN USE**
+2. [Export Endpoints (Content Services API)](#export-endpoints-content-services-api) _(Reference Only)_
+3. [Template Catalog API](#template-catalog-api) _(Reference Only - Not Used)_
 4. [Loading the Beefree SDK](#loading-the-beefree-sdk)
 5. [Loading Templates in the Builder](#loading-templates-in-the-builder)
 6. [onChange and onSave Callbacks](#onchange-and-onsave-callbacks)
 7. [Configuration Toggles](#configuration-toggles)
-8. [HTML Import Functionality](#html-import-functionality)
-9. [Brand Styles API](#brand-styles-api)
+8. [HTML Import Functionality](#html-import-functionality) ⭐ **IN USE**
+9. [Brand Styles API](#brand-styles-api) _(Reference Only - Not Used)_
 10. [Error Handling](#error-handling)
 11. [TypeScript Best Practices](#typescript-best-practices)
 
@@ -377,6 +377,8 @@ const CS_AUTH = RAW_CS_TOKEN.startsWith('Bearer ') ? RAW_CS_TOKEN : (RAW_CS_TOKE
 ---
 
 ## Template Catalog API
+
+> **⚠️ NOTE:** This section is for **reference only**. This app uses **local static templates** from `public/templates/`, NOT the Template Catalog API!
 
 ### Authentication
 Template Catalog API uses Bearer token authentication:
@@ -1136,6 +1138,8 @@ app.post('/v1/html-importer', async (req, res) => {
 
 ## Brand Styles API
 
+> **⚠️ NOTE:** This section is for **reference only**. This app does NOT use the Brand Styles API!
+
 ### Overview
 The Brand Styles API applies consistent branding (fonts, colors, etc.) to templates.
 
@@ -1342,26 +1346,49 @@ app.post('/api/endpoint', async (req, res) => {
 Always use environment variables for sensitive data:
 
 ```bash
+# ===== REQUIRED (for this app) =====
 # Beefree SDK Authentication
 BEE_CLIENT_ID=your_client_id
 BEE_CLIENT_SECRET=your_client_secret
 
-# Template Catalog API
-TEMPLATE_CATALOG_API_TOKEN=your_catalog_token
-
-# Content Services API
-CS_API_TOKEN=your_cs_token
-
-# Brand Styles API
-BRAND_STYLE_API_TOKEN=your_brand_token
-
-# HTML Importer API
+# ===== OPTIONAL (for this app) =====
+# HTML Importer API (only needed for "Import HTML" feature)
 HTML_IMPORTER_API_KEY=your_importer_key
+
+# ===== NOT USED (by this app) =====
+# Template Catalog API - NOT NEEDED (app uses local templates)
+# TEMPLATE_CATALOG_API_TOKEN=your_catalog_token
+
+# Content Services API - NOT NEEDED (app uses pre-generated exports)
+# CS_API_TOKEN=your_cs_token
+
+# Brand Styles API - NOT USED (feature not implemented)
+# BRAND_STYLE_API_TOKEN=your_brand_token
 ```
 
 ---
 
 ## Quick Reference: API Endpoints
+
+### Endpoints Used by This App
+
+| Feature | Endpoint | Method | Input | Output |
+|---------|----------|--------|-------|--------|
+| Auth (LoginV2) | `https://auth.getbee.io/loginV2` | POST | client_id, client_secret, uid | Token |
+| HTML Import | `/v1/conversion/html-to-json` | POST | HTML string (text/html) | Template JSON |
+
+### Static File Endpoints (This App)
+
+| Feature | Path | Method | Notes |
+|---------|------|--------|-------|
+| Template List | `/templates/index.json` | GET | Static file |
+| Get Template | `/templates/{id}.json` | GET | Static file |
+| HTML Export | `/templates/exports/{id}.html` | GET | Pre-generated static file |
+| Plain Text Export | `/templates/exports/{id}.txt` | GET | Pre-generated static file |
+| PDF Export | `/templates/exports/{id}.pdf` | GET | Pre-generated static file |
+| Image Export | `/templates/exports/{id}.png` | GET | Pre-generated static file |
+
+### API Endpoints (Reference Only - Not Used)
 
 | Feature | Endpoint | Method | Input | Output |
 |---------|----------|--------|-------|--------|
@@ -1372,8 +1399,6 @@ HTML_IMPORTER_API_KEY=your_importer_key
 | Get Templates | `/v1/catalog/templates` | GET | Query params | Templates array |
 | Get Template | `/v1/catalog/templates/:id` | GET | Template ID | Template JSON |
 | Brand Styles | `/v1/template/brand` | POST | Template + styles | Styled template JSON |
-| HTML Import | `/v1/conversion/html-to-json` | POST | HTML string (text/html) | Template JSON |
-| Auth (LoginV2) | `https://auth.getbee.io/loginV2` | POST | client_id, client_secret, uid | Token |
 
 ---
 

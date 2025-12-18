@@ -23,14 +23,17 @@ cp env.example .env
 Edit `.env` with your Beefree credentials from [developers.beefree.io](https://developers.beefree.io):
 
 ```bash
+# REQUIRED (2 credentials only!)
 BEE_CLIENT_ID=your_client_id
 BEE_CLIENT_SECRET=your_client_secret
-TEMPLATE_CATALOG_API_TOKEN=your_catalog_token
-CS_API_TOKEN=your_cs_token
+
+# OPTIONAL (only for HTML Import feature)
 HTML_IMPORTER_API_KEY=your_importer_key
 ```
 
 **⚠️ Security:** Never commit `.env` file! It's already in `.gitignore`.
+
+**📝 Note:** This app uses **local static templates** (no Template Catalog API needed). Exports are **pre-generated files** (no Content Services API needed).
 
 ---
 
@@ -81,12 +84,14 @@ Open `http://localhost:5173` in your browser.
 - ✅ Check browser console for errors
 
 **Template dropdown empty?**
-- ✅ Check `TEMPLATE_CATALOG_API_TOKEN` in `.env`
-- ✅ Check terminal running `npm run dev:proxy` for errors
+- ✅ Check that `public/templates/index.json` exists
+- ✅ Check browser console for loading errors
+- ✅ Templates are loaded from local files (no API needed)
 
 **Exports not working?**
-- ✅ Check `CS_API_TOKEN` in `.env`
-- ✅ Restart `npm run dev:proxy`
+- ✅ Exports are pre-generated static files from `public/templates/exports/`
+- ✅ **NOTE:** Exports show the ORIGINAL template, NOT your edits
+- ✅ Check browser console for file loading errors
 
 **Still stuck?** Check [`CONTRIBUTION-GUIDE.md`](./CONTRIBUTION-GUIDE.md) for detailed debugging tips.
 

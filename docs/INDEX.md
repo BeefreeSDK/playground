@@ -102,13 +102,15 @@ npm run test:coverage # Coverage report
 ```
 
 ### Key Features
-- ✅ Template Catalog integration
-- ✅ 4 Export types (HTML, Plain Text, PDF, Image)
-- ✅ HTML Import
+- ✅ Local template system (static files)
+- ✅ Pre-generated exports (HTML, Plain Text, PDF, Image)
+- ✅ HTML Import (optional - requires API key)
 - ✅ 3 Configuration toggles (CSS, Sidebar, Module Groups)
 - ✅ onChange/onSave callbacks with console logging
 - ✅ Editable beeConfig sidebar
 - ✅ Comprehensive unit tests (93 tests)
+
+**⚠️ IMPORTANT:** This app uses local static templates and pre-generated exports, NOT API-based systems!
 
 ### Documentation Files
 
@@ -225,9 +227,14 @@ All source files have comprehensive inline comments:
 - `src/components/ExportResultModal.tsx` - Export results display
 - `src/components/HtmlImportModal.tsx` - HTML import modal
 
-**Backend API Functions:**
-- `api/proxy/bee-auth.js` - Authentication
-- `api/v1/html-importer.js` - HTML to JSON conversion
+**Backend API Functions (Only 2!):**
+- `api/proxy/bee-auth.js` - Authentication (REQUIRED)
+- `api/v1/html-importer.js` - HTML to JSON conversion (OPTIONAL - for HTML Import feature)
+
+**Static File Serving:**
+- `public/templates/index.json` - Template catalog
+- `public/templates/*.json` - Individual templates
+- `public/templates/exports/*.html|txt|pdf|png` - Pre-generated exports
 
 **Test Files:**
 - `src/services/__tests__/` - Service tests
@@ -245,9 +252,9 @@ All source files have comprehensive inline comments:
 - SDK Configuration: https://docs.beefree.io/beefree-sdk/reference/sdk-configuration
 
 **Beefree APIs:**
-- Template Catalog: https://docs.beefree.io/beefree-sdk/apis/template-catalog-api
-- Content Services: https://docs.beefree.io/beefree-sdk/apis/content-services-api
-- HTML Importer: https://docs.beefree.io/beefree-sdk/apis/html-importer-api
+- HTML Importer: https://docs.beefree.io/beefree-sdk/apis/html-importer-api (USED - for HTML Import feature)
+- Template Catalog: https://docs.beefree.io/beefree-sdk/apis/template-catalog-api (NOT USED - app uses local templates)
+- Content Services: https://docs.beefree.io/beefree-sdk/apis/content-services-api (NOT USED - app uses pre-generated exports)
 
 **Vercel:**
 - Serverless Functions: https://vercel.com/docs/functions

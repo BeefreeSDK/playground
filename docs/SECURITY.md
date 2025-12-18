@@ -109,13 +109,18 @@ cp env.example .env
 ### Required Variables
 
 ```
+# REQUIRED (for Beefree SDK)
 BEE_CLIENT_ID
 BEE_CLIENT_SECRET
-TEMPLATE_CATALOG_API_TOKEN
-CS_API_TOKEN
+
+# OPTIONAL (only for HTML Import feature)
 HTML_IMPORTER_API_KEY
-BRAND_STYLE_API_TOKEN (optional)
 ```
+
+**Note:** This app uses **local static templates** and **pre-generated exports**, so it does NOT need:
+- ~~TEMPLATE_CATALOG_API_TOKEN~~ (not used)
+- ~~CS_API_TOKEN~~ (not used)
+- ~~BRAND_STYLE_API_TOKEN~~ (not used)
 
 ---
 
