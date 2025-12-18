@@ -353,31 +353,6 @@ This runs all tests once and exits with a status code:
 - `0` = all tests passed
 - `1` = one or more tests failed
 
-### Example GitHub Actions Workflow
-
-```yaml
-name: Tests
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - run: npm install
-      - run: npm run test:run
-      - run: npm run test:coverage
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-```
-
 ## Best Practices
 
 1. **Write tests alongside code** - Create tests as you develop features

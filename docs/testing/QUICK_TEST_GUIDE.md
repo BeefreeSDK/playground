@@ -130,14 +130,6 @@ describe('myService', () => {
 });
 ```
 
-## CI/CD Integration
-
-GitHub Actions workflow configured in `.github/workflows/test.yml`:
-- ✅ Runs on push to main/code_cleaning
-- ✅ Runs on pull requests
-- ✅ Generates coverage reports
-- ✅ Uploads to Codecov (optional)
-
 ## Troubleshooting
 
 ### Tests not running?
@@ -173,7 +165,6 @@ beforeEach(() => {
 ✅ Easy to run (`npm test`)
 ✅ Visual UI available (`npm run test:ui`)
 ✅ Coverage reports (`npm run test:coverage`)
-✅ CI/CD ready (GitHub Actions)
 ✅ Well documented (TESTING.md)
 
 ---
