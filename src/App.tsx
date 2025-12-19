@@ -164,11 +164,15 @@ function App() {
     const templateId = (selectedTemplate?.data as any)?.templateId;
     if (!templateId) {
       console.error('Export failed: Template ID not found');
+      alert('Template ID not found');
       return;
     }
 
-    // Warn user about static export (shown in console)
-    console.warn('⚠️ Warning: Exporting ORIGINAL template. User edits are NOT included.');
+    // Warn user about static export
+    alert(
+      '⚠️ Warning: This will export the ORIGINAL template.\n\n' +
+      'Any changes you made in the editor will NOT be included.'
+    );
 
     setExportType(exportType);
     setExportModalOpen(true);
@@ -187,7 +191,7 @@ function App() {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       console.error(`${errorLabel} export error:`, err);
-      console.error(`Failed to export ${errorLabel}: ${errorMessage}`);
+      alert(`Failed to export ${errorLabel}: ${errorMessage}`);
       setExportModalOpen(false);
     } finally {
       setLoadingState(loadingStateKey, false);
