@@ -13,40 +13,43 @@ export const DEFAULT_BEE_CONFIG: BeefreeConfig = {
   trackChanges: true,
   rowDisplayConditions: [
     {
-      type: 'Freemium',
-      label: 'Only for Premium users',
-      description: 'This row will show only for users with premium subscriptions',
-      before: `<table style="width: 100%;" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tbody><tr>
-    <td style="padding-bottom: 20px; padding-left: 20px; padding-right: 20px; background-color: rgb(255, 255, 255);" align="center">
-      <table style="width: 100%; max-width: 500px;" width="100%" border="0" cellpadding="0" cellspacing="0">
-        <tbody><tr>
-          <td style="color: rgb(68, 68, 68); font-family: Arial, Helvetica Neue, Helvetica, sans-serif; font-size: 14px; line-height: 150%; padding-top: 5px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px;" align="center">
-            <p style="padding: 0px; margin: 0px; word-break: break-word;">
-              <span style="color: #FF3CAC;">This content is only available for <strong>PREMIUM</strong> users</span>
-            </p>
-          </td>
-        </tr>
-      </tbody></table>
-    </td>
-  </tr>
-</tbody></table>`,
-      after: ``,
+      type: 'Last ordered catalog',
+      label: 'new',
+      description: 'Only new client will see this',
+      before: '{% if lastOrder.catalog == "New" %}',
+      after: '{% endif %}',
     },
   ],
   rowsConfiguration: {
-    emptyRows: true,
     externalContentURLs: [
       {
-        name: 'Beefree Rows',
+        name: 'External resource',
         value:
-          'https://d1oco4z2z1fhwp.cloudfront.net/templates/default/rows/defaultrows_prod.json',
+          'https://qa-bee-playground-backend.getbee.io/api/customrows?ids=1,2,3,4',
       },
     ],
   },
   mergeTags: [
-    { name: 'tag 1', value: '[TAG_1]' },
-    { name: 'tag 2', value: '[TAG_2]' },
+    {
+      name: 'first name',
+      value: '[first-name]',
+      previewValue: 'John',
+    },
+    {
+      name: 'last name',
+      value: '[last-name]',
+      previewValue: 'Doe',
+    },
+    {
+      name: 'email',
+      value: '[email]',
+      previewValue: 'john.doe@gmail.com',
+    },
+    {
+      name: 'company',
+      value: '[company]',
+      previewValue: 'Company Srl',
+    },
   ],
 };
 

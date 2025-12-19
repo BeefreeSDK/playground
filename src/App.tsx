@@ -169,11 +169,18 @@ function App() {
    */
 
   /**
-   * Export to HTML
-   * Loads pre-generated static HTML file (no API call, no user edits included)
+   * Generic export handler to eliminate code duplication
+   * Handles all export types (HTML, Plain Text, PDF, Image)
+   * Loads pre-generated static files (no API call, no user edits included)
    * WARNING: This exports the original template, not any changes the user made
    */
-  const handleGetHtml = async () => {
+  const handleExport = async <T,>(
+    exportType: 'html' | 'plain-text' | 'pdf' | 'image',
+    loadingStateKey: 'html' | 'plainText' | 'pdf' | 'image',
+    loaderFn: (templateId: string) => Promise<T> | T,
+    setResultFn: (result: T) => void,
+    errorLabel: string
+  ) => {
     const templateId = (selectedTemplate?.data as any)?.templateId;
     if (!templateId) {
       alert('Template ID not found');
@@ -183,146 +190,57 @@ function App() {
     // Warn user about static export
     alert('⚠️ Warning: This will export the ORIGINAL template. Any changes you made in the editor will NOT be included.');
 
-    setExportType('html');
+    setExportType(exportType);
     setExportModalOpen(true);
     setExportLoading(true);
-    setLoadingState('html', true);
+    setLoadingState(loadingStateKey, true);
 
     try {
-      // Load pre-generated static HTML file
-      const html = await loadTemplateHtml(templateId);
+      // Load pre-generated static file (may be async or sync)
+      const result = await loaderFn(templateId);
 
-      setExportContent(html);
+      setResultFn(result);
       setExportLoading(false);
 
       // Show warning to user
       console.warn('⚠️ Exported the original template. User edits are NOT included.');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.error('HTML export error:', err);
-      alert('Failed to export HTML: ' + errorMessage);
+      console.error(`${errorLabel} export error:`, err);
+      alert(`Failed to export ${errorLabel}: ${errorMessage}`);
       setExportModalOpen(false);
     } finally {
-      setLoadingState('html', false);
+      setLoadingState(loadingStateKey, false);
     }
   };
+
+  /**
+   * Export to HTML
+   * Loads pre-generated static HTML file (no API call, no user edits included)
+   */
+  const handleGetHtml = () =>
+    handleExport('html', 'html', loadTemplateHtml, setExportContent, 'HTML');
 
   /**
    * Export to Plain Text
    * Loads pre-generated static plain text file (no API call, no user edits included)
-   * WARNING: This exports the original template, not any changes the user made
    */
-  const handleGetPlainText = async () => {
-    const templateId = (selectedTemplate?.data as any)?.templateId;
-    if (!templateId) {
-      alert('Template ID not found');
-      return;
-    }
-
-    // Warn user about static export
-    alert('⚠️ Warning: This will export the ORIGINAL template. Any changes you made in the editor will NOT be included.');
-
-    setExportType('plain-text');
-    setExportModalOpen(true);
-    setExportLoading(true);
-    setLoadingState('plainText', true);
-
-    try {
-      // Load pre-generated static plain text file
-      const text = await loadTemplatePlainText(templateId);
-
-      setExportContent(text);
-      setExportLoading(false);
-
-      // Show warning to user
-      console.warn('⚠️ Exported the original template. User edits are NOT included.');
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Plain text export error:', err);
-      alert('Failed to export plain text: ' + errorMessage);
-      setExportModalOpen(false);
-    } finally {
-      setLoadingState('plainText', false);
-    }
-  };
+  const handleGetPlainText = () =>
+    handleExport('plain-text', 'plainText', loadTemplatePlainText, setExportContent, 'plain text');
 
   /**
    * Export to PDF
    * Uses pre-generated static PDF file (no API call, no user edits included)
-   * WARNING: This exports the original template, not any changes the user made
    */
-  const handleGetPdf = async () => {
-    const templateId = (selectedTemplate?.data as any)?.templateId;
-    if (!templateId) {
-      alert('Template ID not found');
-      return;
-    }
-
-    // Warn user about static export
-    alert('⚠️ Warning: This will export the ORIGINAL template. Any changes you made in the editor will NOT be included.');
-
-    setExportType('pdf');
-    setExportModalOpen(true);
-    setExportLoading(true);
-    setLoadingState('pdf', true);
-
-    try {
-      // Get URL to pre-generated static PDF file
-      const pdfUrl = getTemplatePdfUrl(templateId);
-
-      setExportPdfUrl(pdfUrl);
-      setExportLoading(false);
-
-      // Show warning to user
-      console.warn('⚠️ Exported the original template. User edits are NOT included.');
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.error('PDF export error:', err);
-      alert('Failed to export PDF: ' + errorMessage);
-      setExportModalOpen(false);
-    } finally {
-      setLoadingState('pdf', false);
-    }
-  };
+  const handleGetPdf = () =>
+    handleExport('pdf', 'pdf', getTemplatePdfUrl, setExportPdfUrl, 'PDF');
 
   /**
    * Export to Image (Thumbnail)
    * Uses pre-generated static PNG file (no API call, no user edits included)
-   * WARNING: This exports the original template, not any changes the user made
    */
-  const handleGetImage = async () => {
-    const templateId = (selectedTemplate?.data as any)?.templateId;
-    if (!templateId) {
-      alert('Template ID not found');
-      return;
-    }
-
-    // Warn user about static export
-    alert('⚠️ Warning: This will export the ORIGINAL template. Any changes you made in the editor will NOT be included.');
-
-    setExportType('image');
-    setExportModalOpen(true);
-    setExportLoading(true);
-    setLoadingState('image', true);
-
-    try {
-      // Get URL to pre-generated static image file
-      const imageUrl = getTemplateImageUrl(templateId);
-
-      setExportImageUrl(imageUrl);
-      setExportLoading(false);
-
-      // Show warning to user
-      console.warn('⚠️ Exported the original template. User edits are NOT included.');
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Image export error:', err);
-      alert('Failed to export image: ' + errorMessage);
-      setExportModalOpen(false);
-    } finally {
-      setLoadingState('image', false);
-    }
-  };
+  const handleGetImage = () =>
+    handleExport('image', 'image', getTemplateImageUrl, setExportImageUrl, 'image');
 
   /**
    * Close export modal and reset all export states

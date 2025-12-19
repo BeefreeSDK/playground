@@ -226,16 +226,6 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
   };
 
   /**
-   * Reset to Default Configuration
-   * Loads the default config and applies it
-   */
-  const resetToDefault = () => {
-    const defaultConfig = { ...DEFAULT_BEE_CONFIG };
-    setConfigText(JSON.stringify(defaultConfig, null, 2));
-    setError('');
-  };
-
-  /**
    * Reset to Default and Apply
    * Resets config and immediately applies it (refreshes builder)
    */
@@ -283,15 +273,8 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
     <div className="bee-config-sidebar">
       <div className="config-header">
         <h3>beeConfig</h3>
-        <button 
-          onClick={resetToDefault}
-          className="reset-button"
-          title="Reset to default configuration"
-        >
-          Reset
-        </button>
       </div>
-      
+
       <div className="config-editor">
         <textarea
           value={configText}

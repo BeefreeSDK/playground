@@ -29,11 +29,18 @@ const HtmlImportModal: React.FC<HtmlImportModalProps> = ({ isOpen, onClose, onIm
   const [error, setError] = useState(''); // Error message
   const modalRef = useRef<HTMLDivElement>(null); // Ref for click-outside detection
 
+  const handleClose = () => {
+    if (!isImporting) {
+      setError('');
+      onClose();
+    }
+  };
+
   // Close modal on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !isImporting) {
-        onClose();
+        handleClose();
       }
     };
 
@@ -44,7 +51,7 @@ const HtmlImportModal: React.FC<HtmlImportModalProps> = ({ isOpen, onClose, onIm
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose, isImporting]);
+  }, [isOpen, isImporting]);
 
   /**
    * Load Sample HTML Handler
@@ -64,13 +71,6 @@ const HtmlImportModal: React.FC<HtmlImportModalProps> = ({ isOpen, onClose, onIm
       setError(errorMessage);
     } finally {
       setIsImporting(false);
-    }
-  };
-
-  const handleClose = () => {
-    if (!isImporting) {
-      setError('');
-      onClose();
     }
   };
 
