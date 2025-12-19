@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { BeefreeConfig } from '../types/beefree';
+import type { WindowWithBeefreeFunctions } from '../types/window';
 import { DEFAULT_BEE_CONFIG } from '../constants';
 
 /**
@@ -28,18 +29,9 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
   const [isApplying, setIsApplying] = useState(false);
 
   /**
-   * Window functions interface for type safety
-   */
-  interface WindowWithToggleFunctions extends Window {
-    toggleCustomCss?: (enabled: boolean) => void;
-    toggleMoveSidebar?: (enabled: boolean) => void;
-    toggleGroupContentTiles?: (enabled: boolean) => void;
-  }
-
-  /**
    * Expose functions to toggle configuration from TemplateTopBar
    * These functions are called via window.toggle* functions
-   * 
+   *
    * Flow:
    * 1. Parse current JSON config
    * 2. Add or remove configuration property
@@ -47,7 +39,7 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
    * 4. Auto-apply changes (triggers editor restart)
    */
   useEffect(() => {
-    const win = window as WindowWithToggleFunctions;
+    const win = window as WindowWithBeefreeFunctions;
     
     win.toggleCustomCss = (enabled: boolean) => {
       try {

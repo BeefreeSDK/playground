@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { SAMPLE_NEWSLETTER_HTML } from './sampleHtml';
 
 /**
@@ -27,7 +27,6 @@ interface HtmlImportModalProps {
 const HtmlImportModal: React.FC<HtmlImportModalProps> = ({ isOpen, onClose, onImport }) => {
   const [isImporting, setIsImporting] = useState(false); // Loading state during API call
   const [error, setError] = useState(''); // Error message
-  const modalRef = useRef<HTMLDivElement>(null); // Ref for click-outside detection
 
   const handleClose = () => {
     if (!isImporting) {
@@ -78,7 +77,7 @@ const HtmlImportModal: React.FC<HtmlImportModalProps> = ({ isOpen, onClose, onIm
 
   return (
     <div className="modal-overlay">
-      <div className="modal-container" ref={modalRef}>
+      <div className="modal-container">
         <div className="modal-header">
           <h2>Import Sample HTML</h2>
           <button 

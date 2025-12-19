@@ -5,8 +5,9 @@ import BeeConfigSidebar from './components/BeeConfigSidebar';
 import ExportDropdown from './components/ExportDropdown';
 import HtmlImportModal from './components/HtmlImportModal';
 import ExportResultModal from './components/ExportResultModal';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { TemplateData, BeefreeTemplateJson, BeefreeConfig } from './types';
+import type { WindowWithBeefreeFunctions } from './types/window';
 import {
   loadTemplateHtml,
   loadTemplatePlainText,
@@ -77,16 +78,6 @@ function App() {
     setSelectedTemplate(template);
   };
 
-  const handleTemplateLoad = useCallback((_templateData: BeefreeTemplateJson) => {
-    // Template is tracked in BeefreeEditor's currentTemplateRef via onChange callback
-    // No need to maintain duplicate state here
-  }, []);
-
-  const handleJsonChange = useCallback((_json: BeefreeTemplateJson) => {
-    // Template is tracked in BeefreeEditor's currentTemplateRef via onChange callback
-    // No need to maintain duplicate state here
-  }, []);
-
   /**
    * Clear selected template after loading
    * Prevents template from reloading when component re-renders
@@ -110,17 +101,6 @@ function App() {
   const handleBeeConfigUpdate = (config: BeefreeConfig) => {
     setBeeConfig(config);
   };
-
-  /**
-   * Window functions interface for type safety
-   */
-  interface WindowWithBeefreeFunctions extends Window {
-    toggleCustomCss?: (enabled: boolean) => void;
-    toggleMoveSidebar?: (enabled: boolean) => void;
-    toggleGroupContentTiles?: (enabled: boolean) => void;
-    loadTemplate?: (templateData: BeefreeTemplateJson) => Promise<void>;
-    restartEditor?: () => void;
-  }
 
   /**
    * Custom CSS Toggle Handler
@@ -183,12 +163,12 @@ function App() {
   ) => {
     const templateId = (selectedTemplate?.data as any)?.templateId;
     if (!templateId) {
-      alert('Template ID not found');
+      console.error('Export failed: Template ID not found');
       return;
     }
 
-    // Warn user about static export
-    alert('⚠️ Warning: This will export the ORIGINAL template. Any changes you made in the editor will NOT be included.');
+    // Warn user about static export (shown in console)
+    console.warn('⚠️ Warning: Exporting ORIGINAL template. User edits are NOT included.');
 
     setExportType(exportType);
     setExportModalOpen(true);
@@ -207,7 +187,7 @@ function App() {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       console.error(`${errorLabel} export error:`, err);
-      alert(`Failed to export ${errorLabel}: ${errorMessage}`);
+      console.error(`Failed to export ${errorLabel}: ${errorMessage}`);
       setExportModalOpen(false);
     } finally {
       setLoadingState(loadingStateKey, false);
@@ -372,10 +352,8 @@ function App() {
 
         {/* Center Panel - Beefree Editor */}
         <div className="editor-container-full">
-          <BeefreeEditor 
+          <BeefreeEditor
             selectedTemplate={selectedTemplate}
-            onTemplateLoad={handleTemplateLoad}
-            onJsonChange={handleJsonChange}
             beeConfig={beeConfig}
             onConfigChange={handleBeeConfigUpdate}
             onTemplateSelectClear={handleTemplateSelectClear}

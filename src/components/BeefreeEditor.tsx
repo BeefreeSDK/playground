@@ -8,6 +8,7 @@ import type {
   BeefreeSDKInstance,
   ChangeResponse
 } from '../types/beefree';
+import type { WindowWithBeefreeFunctions } from '../types/window';
 import { DEFAULT_BEE_CONFIG } from '../constants';
 
 /**
@@ -31,11 +32,10 @@ import { DEFAULT_BEE_CONFIG } from '../constants';
 
 interface BeefreeEditorProps {
   selectedTemplate: TemplateData | null;
-  onTemplateLoad: (templateData: BeefreeTemplateJson) => void;
+  onTemplateLoad?: (templateData: BeefreeTemplateJson) => void;
   onJsonChange?: (json: BeefreeTemplateJson) => void;
   beeConfig?: BeefreeConfig | null;
   onConfigChange?: (config: BeefreeConfig) => void;
-  onReady?: () => void;
   onTemplateSelectClear?: () => void;
 }
 
@@ -45,7 +45,6 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
   onJsonChange,
   beeConfig,
   onConfigChange,
-  onReady,
   onTemplateSelectClear
 }) => {
   const editorRef = useRef<HTMLDivElement>(null); // Reference to the DOM container for Beefree SDK
@@ -113,14 +112,6 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
   };
 
   /**
-   * Window functions interface for type safety
-   */
-  interface WindowWithBeefreeFunctions extends Window {
-    restartEditor?: () => void;
-    loadTemplate?: (templateData: BeefreeTemplateJson) => Promise<void>;
-  }
-
-  /**
    * Expose functions to window object for cross-component communication
    * These functions allow other components to interact with the editor without prop drilling
    */
@@ -159,8 +150,10 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         
         // Clear any previous errors on success
         setError('');
-        
-        onTemplateLoad(normalizedData);
+
+        if (onTemplateLoad) {
+          onTemplateLoad(normalizedData);
+        }
         if (onJsonChange) {
           onJsonChange(normalizedData);
         }
@@ -264,7 +257,9 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
             if (onJsonChange) {
               onJsonChange(parsedJson);
             }
-            onTemplateLoad(parsedJson);
+            if (onTemplateLoad) {
+              onTemplateLoad(parsedJson);
+            }
           },
           onError: (error: unknown) => {
             console.error('⚠️ Beefree SDK Error:', error);
@@ -306,8 +301,10 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
           
           // IMPORTANT: Call onTemplateLoad so parent component (App.tsx) updates currentJson
           // This allows Export functionality to work with the initial template
-          onTemplateLoad(initialJson);
-          
+          if (onTemplateLoad) {
+            onTemplateLoad(initialJson);
+          }
+
           // Also notify onChange handler if provided
           if (onJsonChange) {
             onJsonChange(initialJson);
@@ -325,10 +322,6 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         setIsInitialized(true);
         setLoading(false);
         console.log('✨ Beefree SDK initialized successfully!');
-        
-        if (onReady) {
-          onReady();
-        }
 
       } catch (err: unknown) {
         if (disposed) return;
@@ -390,7 +383,9 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         }
         await sdkRef.current.load(normalizedData);
         currentTemplateRef.current = normalizedData;
-        onTemplateLoad(normalizedData);
+        if (onTemplateLoad) {
+          onTemplateLoad(normalizedData);
+        }
 
         setLoading(false);
       } catch (err: unknown) {

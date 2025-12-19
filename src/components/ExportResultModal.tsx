@@ -1,4 +1,5 @@
 import './ExportResultModal.css';
+import { downloadText, downloadHtml } from '../utils/downloadHelpers';
 
 /**
  * ExportResultModal Component
@@ -60,26 +61,15 @@ const ExportResultModal: React.FC<ExportResultModalProps> = ({
     }
   };
 
-  const downloadText = (text: string, filename: string) => {
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const downloadImage = () => {
+  const handleDownloadImage = () => {
     if (imageUrl) {
-      const a = document.createElement('a');
-      a.href = imageUrl;
-      a.download = 'template-thumbnail.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      // For image URLs (blob URLs), we can directly download using the generic utility
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = 'template-thumbnail.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -132,10 +122,13 @@ const ExportResultModal: React.FC<ExportResultModalProps> = ({
           <div className="modal-footer">
             {(type === 'html' || type === 'plain-text') && content && (
               <button
-                onClick={() => downloadText(
-                  content,
-                  type === 'html' ? 'template.html' : 'template.txt'
-                )}
+                onClick={() => {
+                  if (type === 'html') {
+                    downloadHtml(content, 'template.html');
+                  } else {
+                    downloadText(content, 'template.txt');
+                  }
+                }}
                 className="btn-primary"
               >
                 Download {type === 'html' ? 'HTML' : 'Text'}
@@ -143,7 +136,7 @@ const ExportResultModal: React.FC<ExportResultModalProps> = ({
             )}
 
             {type === 'image' && imageUrl && (
-              <button onClick={downloadImage} className="btn-primary">
+              <button onClick={handleDownloadImage} className="btn-primary">
                 Download Image
               </button>
             )}
