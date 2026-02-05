@@ -25,6 +25,11 @@ const TEMPLATE_CATALOG_API_TOKEN = process.env.TEMPLATE_CATALOG_API_TOKEN;
 const HTML_IMPORTER_API_KEY = process.env.HTML_IMPORTER_API_KEY;
 const HTML_IMPORTER_URL = process.env.HTML_IMPORTER_URL || 'https://api.getbee.io/v1/conversion/html-to-json';
 
+// Healthcheck
+app.get('/healthcheck', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // V2 Auth Endpoint
 app.post('/proxy/bee-auth', async (req, res) => {
   try {
