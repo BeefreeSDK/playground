@@ -1,5 +1,7 @@
 import type { BeefreeConfig } from '../types/beefree';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 export const DEFAULT_BEE_CONFIG: BeefreeConfig = {
   container: 'beefree-react-demo',
   language: 'en-US',
@@ -18,7 +20,7 @@ export const DEFAULT_BEE_CONFIG: BeefreeConfig = {
     externalContentURLs: [
       {
         name: 'External resource',
-        value: `${window.location.origin}/api/customrows`,
+        value: `${BACKEND_URL || window.location.origin}/api/customrows`,
       },
     ],
   },
@@ -47,8 +49,8 @@ export const DEFAULT_BEE_CONFIG: BeefreeConfig = {
 };
 
 export const API_ENDPOINTS = {
-  AUTH: '/proxy/bee-auth',
-  HTML_IMPORTER: '/v1/html-importer',
+  AUTH: `${BACKEND_URL}/proxy/bee-auth`,
+  HTML_IMPORTER: `${BACKEND_URL}/v1/html-importer`,
 } as const;
 
 export const INITIAL_TEMPLATE_ID = 'beefree-sdk-demo-template';

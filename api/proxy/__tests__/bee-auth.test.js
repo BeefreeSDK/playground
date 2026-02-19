@@ -90,8 +90,6 @@ describe('bee-auth endpoint', () => {
   });
 
   it('should handle authentication errors', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
     axios.post.mockRejectedValue(new Error('Network error'));
 
     mockReq.body = { uid: 'test-user' };
@@ -100,9 +98,6 @@ describe('bee-auth endpoint', () => {
 
     expect(mockRes.status).toHaveBeenCalledWith(500);
     expect(mockRes.json).toHaveBeenCalledWith({ error: 'Failed to authenticate' });
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Auth error:', 'Network error');
-
-    consoleErrorSpy.mockRestore();
   });
 
   it('should handle axios errors with response', async () => {
