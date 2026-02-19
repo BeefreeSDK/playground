@@ -244,8 +244,7 @@ function App() {
     setError('');
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
-      const response = await fetch(`${backendUrl}${API_ENDPOINTS.HTML_IMPORTER}`, {
+      const response = await fetch(API_ENDPOINTS.HTML_IMPORTER, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html }),

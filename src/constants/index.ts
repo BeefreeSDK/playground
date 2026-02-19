@@ -1,7 +1,5 @@
 import type { BeefreeConfig } from '../types/beefree';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
-
 export const DEFAULT_BEE_CONFIG: BeefreeConfig = {
   container: 'beefree-react-demo',
   language: 'en-US',
@@ -20,7 +18,7 @@ export const DEFAULT_BEE_CONFIG: BeefreeConfig = {
     externalContentURLs: [
       {
         name: 'External resource',
-        value: `${BACKEND_URL}/api/customrows`,
+        value: `${window.location.origin}/api/customrows`,
       },
     ],
   },
