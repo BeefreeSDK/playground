@@ -1,27 +1,32 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Cross-Origin-Resource-Policy': 'cross-origin'
-    },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const backendUrl = env.BACKEND_URL || 'http://localhost:3001'
+
+  return {
+    plugins: [react()],
+    server: {
+      port: 5173,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Cross-Origin-Resource-Policy': 'cross-origin'
       },
-      '/proxy': {
-        target: 'http://localhost:3001',
-        changeOrigin: true
-      },
-      '/v1': {
-        target: 'http://localhost:3001',
-        changeOrigin: true
+      proxy: {
+        '/api': {
+          target: backendUrl,
+          changeOrigin: true
+        },
+        '/proxy': {
+          target: backendUrl,
+          changeOrigin: true
+        },
+        '/v1': {
+          target: backendUrl,
+          changeOrigin: true
+        }
       }
     }
   }
