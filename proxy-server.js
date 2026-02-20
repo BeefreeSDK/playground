@@ -96,14 +96,17 @@ app.post('/proxy/bee-auth', authLimiter, async (req, res) => {
 
     res.json(response.data);
   } catch (error) {
-    if (error.response) {
-      console.error(`[bee-auth] Beefree auth API responded with ${error.response.status}:`, error.response.data);
-    } else if (error.request) {
-      console.error('[bee-auth] No response from Beefree auth API:', error.message);
-    } else {
-      console.error('[bee-auth] Request setup error:', error.message);
-    }
-    res.status(500).json({ error: 'Failed to authenticate' });
+    const status = error.response?.status || 500;
+    const upstream = error.response?.data;
+    console.error('Auth error:', {
+      status,
+      message: error.message,
+      upstream,
+    });
+    res.status(status).json({
+      error: 'Failed to authenticate',
+      ...(upstream && { details: upstream }),
+    });
   }
 });
 
@@ -188,22 +191,23 @@ app.post('/v1/html-importer', async (req, res) => {
 
     res.json(response.data);
   } catch (error) {
-    if (error.response) {
-      console.error(`[html-importer] Beefree API responded with ${error.response.status}:`, error.response.data);
-    } else if (error.request) {
-      console.error('[html-importer] No response from Beefree API:', error.message);
-    } else {
-      console.error('[html-importer] Request setup error:', error.message);
-    }
+    const status = error.response?.status;
+    const upstream = error.response?.data;
+    console.error('HTML Importer error:', {
+      status: status || 'N/A',
+      message: error.message,
+      code: error.code,
+      upstream,
+    });
 
-    if (error.response?.status === 413) {
-      res.status(413).json({ error: 'HTML content too large' });
-    } else if (error.response?.status === 422) {
-      res.status(422).json({ error: 'Invalid HTML format. Please check the HTML content.' });
+    if (status === 413) {
+      res.status(413).json({ error: 'HTML content too large', ...(upstream && { details: upstream }) });
+    } else if (status === 422) {
+      res.status(422).json({ error: 'Invalid HTML format. Please check the HTML content.', ...(upstream && { details: upstream }) });
     } else if (error.code === 'ECONNABORTED') {
       res.status(408).json({ error: 'Request timeout - HTML processing took too long' });
     } else {
-      res.status(500).json({ error: 'Failed to import HTML' });
+      res.status(status || 500).json({ error: 'Failed to import HTML', ...(upstream && { details: upstream }) });
     }
   }
 });
