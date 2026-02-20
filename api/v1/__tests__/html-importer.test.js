@@ -104,6 +104,12 @@ describe('html-importer endpoint', () => {
 
     expect(mockRes.status).toHaveBeenCalledWith(413);
     expect(mockRes.json).toHaveBeenCalledWith({ error: 'HTML content too large' });
+    expect(consoleErrorSpy).toHaveBeenCalledWith('HTML importer error:', {
+      message: 'Payload too large',
+      code: undefined,
+      status: 413,
+      responseData: {},
+    });
 
     consoleErrorSpy.mockRestore();
   });
@@ -124,6 +130,12 @@ describe('html-importer endpoint', () => {
     expect(mockRes.json).toHaveBeenCalledWith({
       error: 'Invalid HTML format. Please check the HTML content.',
     });
+    expect(consoleErrorSpy).toHaveBeenCalledWith('HTML importer error:', {
+      message: 'Invalid HTML',
+      code: undefined,
+      status: 422,
+      responseData: { message: 'HTML syntax error' },
+    });
 
     consoleErrorSpy.mockRestore();
   });
@@ -139,6 +151,12 @@ describe('html-importer endpoint', () => {
 
     expect(mockRes.status).toHaveBeenCalledWith(408);
     expect(mockRes.json).toHaveBeenCalledWith({ error: 'Request timeout - HTML processing took too long' });
+    expect(consoleErrorSpy).toHaveBeenCalledWith('HTML importer error:', {
+      message: 'Timeout',
+      code: 'ECONNABORTED',
+      status: undefined,
+      responseData: undefined,
+    });
 
     consoleErrorSpy.mockRestore();
   });
@@ -154,6 +172,12 @@ describe('html-importer endpoint', () => {
     expect(mockRes.status).toHaveBeenCalledWith(500);
     expect(mockRes.json).toHaveBeenCalledWith({
       error: 'Failed to import HTML',
+    });
+    expect(consoleErrorSpy).toHaveBeenCalledWith('HTML importer error:', {
+      message: 'Network error',
+      code: undefined,
+      status: undefined,
+      responseData: undefined,
     });
 
     consoleErrorSpy.mockRestore();

@@ -492,9 +492,17 @@ export default async function handler(req, res) {
 
     res.json(response.data);
   } catch (error) {
-    if (error.response?.status === 413) {
+    const status = error.response?.status;
+    const responseData = error.response?.data;
+    console.error('HTML importer error:', {
+      message: error.message,
+      code: error.code,
+      status,
+      responseData,
+    });
+    if (status === 413) {
       res.status(413).json({ error: 'HTML content too large' });
-    } else if (error.response?.status === 422) {
+    } else if (status === 422) {
       res.status(422).json({ error: 'Invalid HTML format. Please check the HTML content.' });
     } else if (error.code === 'ECONNABORTED') {
       res.status(408).json({ error: 'Request timeout - HTML processing took too long' });

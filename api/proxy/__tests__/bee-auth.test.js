@@ -90,6 +90,8 @@ describe('bee-auth endpoint', () => {
   });
 
   it('should handle authentication errors', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
     axios.post.mockRejectedValue(new Error('Network error'));
 
     mockReq.body = { uid: 'test-user' };
@@ -98,6 +100,14 @@ describe('bee-auth endpoint', () => {
 
     expect(mockRes.status).toHaveBeenCalledWith(500);
     expect(mockRes.json).toHaveBeenCalledWith({ error: 'Failed to authenticate' });
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Auth error:', {
+      message: 'Network error',
+      status: undefined,
+      responseData: undefined,
+      uid: 'test-user',
+    });
+
+    consoleErrorSpy.mockRestore();
   });
 
   it('should handle axios errors with response', async () => {
@@ -115,6 +125,12 @@ describe('bee-auth endpoint', () => {
 
     expect(mockRes.status).toHaveBeenCalledWith(500);
     expect(mockRes.json).toHaveBeenCalledWith({ error: 'Failed to authenticate' });
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Auth error:', {
+      message: 'Request failed',
+      status: 401,
+      responseData: { message: 'Invalid credentials' },
+      uid: 'demo-user',
+    });
 
     consoleErrorSpy.mockRestore();
   });
