@@ -96,6 +96,13 @@ app.post('/proxy/bee-auth', authLimiter, async (req, res) => {
 
     res.json(response.data);
   } catch (error) {
+    if (error.response) {
+      console.error(`[bee-auth] Beefree auth API responded with ${error.response.status}:`, error.response.data);
+    } else if (error.request) {
+      console.error('[bee-auth] No response from Beefree auth API:', error.message);
+    } else {
+      console.error('[bee-auth] Request setup error:', error.message);
+    }
     res.status(500).json({ error: 'Failed to authenticate' });
   }
 });
@@ -181,6 +188,14 @@ app.post('/v1/html-importer', async (req, res) => {
 
     res.json(response.data);
   } catch (error) {
+    if (error.response) {
+      console.error(`[html-importer] Beefree API responded with ${error.response.status}:`, error.response.data);
+    } else if (error.request) {
+      console.error('[html-importer] No response from Beefree API:', error.message);
+    } else {
+      console.error('[html-importer] Request setup error:', error.message);
+    }
+
     if (error.response?.status === 413) {
       res.status(413).json({ error: 'HTML content too large' });
     } else if (error.response?.status === 422) {
