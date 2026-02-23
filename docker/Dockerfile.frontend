@@ -1,0 +1,15 @@
+FROM node:18-alpine AS prod
+
+WORKDIR /app
+
+COPY ../package*.json ./
+
+RUN npm ci --production
+
+COPY ../proxy-server.js ./
+
+USER node
+
+EXPOSE 3001
+
+CMD ["node", "proxy-server.js"]
