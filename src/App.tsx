@@ -299,8 +299,16 @@ function App() {
               onExportPdf={handleGetPdf}
               loading={loading}
             />
-            <a 
-              href="https://developers.beefree.io/signup?utm_source=sdk&utm_medium=internal&utm_campaign=sdkplayground&utm_content=signup" 
+            <a
+              href={API_ENDPOINTS.HEALTHCHECK}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secondary"
+            >
+              Healthcheck
+            </a>
+            <a
+              href="https://developers.beefree.io/signup?utm_source=sdk&utm_medium=internal&utm_campaign=sdkplayground&utm_content=signup"
               target="_blank" 
               rel="noreferrer"
               className="btn-secondary"
