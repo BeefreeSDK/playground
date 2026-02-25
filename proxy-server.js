@@ -28,7 +28,11 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
 app.use(helmet());
 
 // CORS — restrict to known origins
-app.use(cors());
+app.use(cors({
+  origin: ALLOWED_ORIGINS,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 // Rate limiting
 const limiter = rateLimit({
