@@ -213,7 +213,7 @@ app.post('/v1/html-importer', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Proxy server running on http://localhost:${PORT}`);
+  console.log(`Playground proxy server running on http://localhost:${PORT}`);
   console.log('Environment:', {
     PORT,
     ALLOWED_ORIGINS,
