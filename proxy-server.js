@@ -214,4 +214,11 @@ app.post('/v1/html-importer', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
+  console.log('Environment:', {
+    PORT,
+    ALLOWED_ORIGINS,
+    BEE_CLIENT_ID: BEE_CLIENT_ID || '(not set)',
+    BEE_CLIENT_SECRET: BEE_CLIENT_SECRET || '(not set)',
+    HTML_IMPORTER_API_KEY: HTML_IMPORTER_API_KEY || '(not set)',
+  });
 });
