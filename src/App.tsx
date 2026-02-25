@@ -299,14 +299,20 @@ function App() {
               onExportPdf={handleGetPdf}
               loading={loading}
             />
-            <a
-              href={API_ENDPOINTS.HEALTHCHECK}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch(API_ENDPOINTS.HEALTHCHECK);
+                  const data = await res.json();
+                  console.log('[healthcheck]', data);
+                } catch (err) {
+                  console.error('[healthcheck] failed', err);
+                }
+              }}
               className="btn-secondary"
             >
               Healthcheck
-            </a>
+            </button>
             <a
               href="https://developers.beefree.io/signup?utm_source=sdk&utm_medium=internal&utm_campaign=sdkplayground&utm_content=signup"
               target="_blank" 
