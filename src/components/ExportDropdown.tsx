@@ -122,7 +122,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({
           <div className="dropdown-divider"></div>
           
           <a 
-            href="https://docs.beefree.io/beefree-sdk/apis/content-services-api/export" 
+            href="https://docs.beefree.io/beefree-sdk/apis/content-services-api/export?utm_source=sdk&utm_medium=internal&utm_campaign=sdkplayground&utm_content=documentation_inner_link" 
             target="_blank" 
             rel="noreferrer"
             className="export-dropdown-item docs-item"
