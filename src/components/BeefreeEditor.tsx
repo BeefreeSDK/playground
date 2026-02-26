@@ -97,6 +97,18 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
     init();
   }, []);
 
+  // Push config changes to the SDK when beeConfig prop changes
+  useEffect(() => {
+    if (beeConfig) {
+      updateConfig({
+        ...beeConfig,
+        uid: 'demo-user',
+        container: CONTAINER_ID,
+        trackChanges: true,
+      } as Partial<IBeeConfig>);
+    }
+  }, [beeConfig, updateConfig]);
+
   // Expose window functions for cross-component communication
   useEffect(() => {
     const win = window as WindowWithBeefreeFunctions;
