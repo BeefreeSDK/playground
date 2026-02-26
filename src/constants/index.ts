@@ -51,7 +51,6 @@ export const DEFAULT_BEE_CONFIG: BeefreeConfig = {
 export const API_ENDPOINTS = {
   AUTH: `${BACKEND_URL}/proxy/bee-auth`,
   HTML_IMPORTER: `${BACKEND_URL}/v1/html-importer`,
-  HEALTHCHECK: `${BACKEND_URL}/healthcheck`,
 } as const;
 
 export const INITIAL_TEMPLATE_ID = 'beefree-sdk-demo-template';

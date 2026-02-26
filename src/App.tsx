@@ -299,20 +299,6 @@ function App() {
               onExportPdf={handleGetPdf}
               loading={loading}
             />
-            <button
-              onClick={async () => {
-                try {
-                  const res = await fetch(API_ENDPOINTS.HEALTHCHECK);
-                  const data = await res.json();
-                  console.log('[healthcheck]', data);
-                } catch (err) {
-                  console.error('[healthcheck] failed', err);
-                }
-              }}
-              className="btn-secondary"
-            >
-              Healthcheck
-            </button>
             <a
               href="https://developers.beefree.io/signup?utm_source=sdk&utm_medium=internal&utm_campaign=sdkplayground&utm_content=signup"
               target="_blank" 
