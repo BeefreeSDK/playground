@@ -90,7 +90,7 @@ app.post('/proxy/bee-auth', authLimiter, async (req, res) => {
       {
         client_id: BEE_CLIENT_ID,
         client_secret: BEE_CLIENT_SECRET,
-        uid: sanitizedUid
+        uid: sanitizedUid,
       },
       { headers: { 'Content-Type': 'application/json' }, timeout: 10000 }
     );

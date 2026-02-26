@@ -15,7 +15,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@beefree.io/sdk": "9.2.1",
+    "@beefree.io/react-email-builder": "^1.0.2",
     "axios": "^1.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

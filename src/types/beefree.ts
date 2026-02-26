@@ -129,24 +129,4 @@ export interface TemplateData {
   data?: unknown;
 }
 
-/**
- * Beefree SDK Instance (minimal type for refs)
- */
-export interface BeefreeSDKInstance {
-  start: (config: BeefreeConfig, template?: BeefreeTemplateJson | null, ...args: unknown[]) => Promise<void>;
-  load: (template: BeefreeTemplateJson) => Promise<void>;
-  save?: () => Promise<void>;
-  destroy?: () => void;
-  [key: string]: unknown; // Allow SDK-specific methods
-}
-
-/**
- * onChange callback response
- */
-export interface ChangeResponse {
-  description?: string;
-  value?: unknown;
-  patches?: unknown[];
-  [key: string]: unknown;
-}
 
