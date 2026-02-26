@@ -137,17 +137,6 @@ playground/
 
 ---
 
-## API Endpoints
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/proxy/bee-auth` | POST | Authenticate with Beefree (proxies to `auth.getbee.io/loginV2`) |
-| `/v1/html-importer` | POST | Convert HTML to Beefree JSON |
-| `/healthcheck` | GET | Server health check |
-| `/api/customrows` | GET | Static JSON for SDK external content rows |
-
----
-
 ## Environment Variables
 
 ### Required
@@ -173,20 +162,6 @@ PORT=3001
 # Leave empty for local development (Vite proxy handles routing)
 VITE_BACKEND_URL=
 ```
-
----
-
-## Security
-
-The proxy server includes the following security measures:
-
-- **CORS** — Restricted to configured allowed origins (not open to all)
-- **Rate limiting** — 100 requests per 15 minutes globally, 20 per 15 minutes on the auth endpoint
-- **Helmet** — Standard security headers (X-Frame-Options, X-Content-Type-Options, CSP, HSTS, etc.)
-- **Input validation** — `uid` parameter validated with pattern matching and length limits; HTML sanitized before processing
-- **Error handling** — Internal error details are not leaked to clients
-- **Payload limits** — Request body limited to 5MB
-- **No hardcoded secrets** — All credentials read from environment variables; `.env` files are gitignored
 
 ---
 
