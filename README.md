@@ -7,8 +7,10 @@ A demonstration of [Beefree SDK](https://docs.beefree.io/beefree-sdk) integratio
 ## Features
 
 ### Beefree SDK Editor
-- Full-featured email/page builder powered by Beefree SDK
+- Full-featured email/page builder powered by the [@beefree.io/react-email-builder](https://github.com/BeefreeSDK/react-email-builder) React wrapper
+- Declarative `<Builder>` component with `useBuilder` hook for SDK lifecycle management
 - Real-time editing with onChange/onSave callbacks
+- Dynamic configuration updates via `updateConfig` (no full restart needed)
 - Custom CSS injection, sidebar position control, and module grouping
 - Editable beeConfig JSON with live apply
 
@@ -21,7 +23,7 @@ All exports are pre-generated static files. User edits in the editor are **not**
 
 For live Content Services API integration, see the [official SDK code samples](https://docs.beefree.io/beefree-sdk/apis/content-services-api).
 
-### Configuration Toggles
+### Preset configuration changes (toggles)
 - **Apply Custom CSS** - Adds/removes the `customCss` property in beeConfig
 - **Move Sidebar** - Toggles `sidebarPosition` between `"left"` and `"right"`
 - **Group Content Tiles** - Adds/removes `modulesGroups` configuration
@@ -60,13 +62,9 @@ npm run dev:proxy    # Backend  — http://localhost:3001
 
 ```
 playground/
-├── api/                            # Serverless Functions
-│   ├── proxy/bee-auth.js           # Authentication endpoint
-│   └── v1/html-importer.js        # HTML-to-JSON conversion (hardcoded sample)
-│
 ├── src/
 │   ├── components/
-│   │   ├── BeefreeEditor.tsx       # SDK lifecycle and initialization
+│   │   ├── BeefreeEditor.tsx       # Builder + useBuilder wrapper
 │   │   ├── BeeConfigSidebar.tsx    # JSON config editor + toggle handlers
 │   │   ├── TemplateTopBar.tsx      # Template dropdown + toggle switches
 │   │   ├── ExportDropdown.tsx      # Export menu
@@ -89,6 +87,8 @@ playground/
 │   └── main.tsx                    # React entry point
 │
 ├── public/
+│   ├── favicon.png                 # Beefree favicon
+│   ├── apple-touch-icon.png        # Beefree apple touch icon
 │   ├── template.json               # Initial template (loaded on app start)
 │   └── templates/
 │       ├── index.json              # Template catalog index
@@ -99,10 +99,14 @@ playground/
 │           ├── *.pdf
 │           └── *.png
 │
+├── scripts/
+│   ├── deploy-frontend.sh          # S3 deploy script with Matomo injection
+│   └── matomo-tracking.txt         # Matomo tracking snippet (injected at deploy time)
+│
 ├── docker/
 │   └── Dockerfile.backend          # Backend container (Node 18 Alpine)
 │
-├── proxy-server.js                 # Express dev server (local development)
+├── proxy-server.js                 # Express proxy server (auth + HTML importer)
 ├── vite.config.ts                  # Vite build config + dev proxy
 ├── vitest.config.ts                # Test configuration
 ├── tsconfig.json                   # TypeScript configuration
@@ -112,15 +116,24 @@ playground/
 
 ---
 
-## Technologies
+## Architecture
 
-- **React 18** + **TypeScript** (strict mode) — UI framework
+### Frontend
+- **React 18** + **TypeScript** — UI framework
 - **Vite 5** — Build tool and dev server
-- **Beefree SDK 9.2.1** — Email/page builder
-- **Express** — Local dev proxy server
+- **@beefree.io/react-email-builder** — Official React wrapper for the Beefree SDK
+- **Vitest** + **Testing Library** — Unit tests
+
+### Backend (Proxy Server)
+- **Express** — HTTP server
 - **Helmet** — Security headers
 - **express-rate-limit** — Rate limiting
-- **Vitest** + **Testing Library** — Unit tests
+- **Axios** — HTTP client for upstream Beefree APIs
+
+### Deployment
+- **Frontend** — Static build (`npm run build`) deployed to S3
+- **Backend** — Docker container deployed to AWS ECS
+- Environment variables: `VITE_BACKEND_URL` must be set at frontend **build time**; `ALLOWED_ORIGINS`, `BEE_CLIENT_ID`, `BEE_CLIENT_SECRET` must be set in the ECS task definition at **runtime**
 
 ---
 
@@ -128,9 +141,10 @@ playground/
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/proxy/bee-auth` | POST | Authenticate with Beefree and get SDK token |
-| `/v1/html-importer` | POST | Convert sample HTML to Beefree JSON |
-| `/healthcheck` | GET | Server health check (local dev only) |
+| `/proxy/bee-auth` | POST | Authenticate with Beefree (proxies to `auth.getbee.io/loginV2`) |
+| `/v1/html-importer` | POST | Convert HTML to Beefree JSON |
+| `/healthcheck` | GET | Server health check |
+| `/api/customrows` | GET | Static JSON for SDK external content rows |
 
 ---
 
@@ -154,6 +168,10 @@ ALLOWED_ORIGINS=http://localhost:5173
 
 # Proxy server port (default: 3001)
 PORT=3001
+
+# Frontend only — set at build time to point to the backend URL
+# Leave empty for local development (Vite proxy handles routing)
+VITE_BACKEND_URL=
 ```
 
 ---
@@ -193,29 +211,46 @@ npm run test:ui       # Vitest UI
 - [ ] Group Content Tiles toggle groups modules
 - [ ] Export HTML/Text/PDF/Image shows confirmation, then displays result
 - [ ] Import HTML loads the sample newsletter
-- [ ] Editing beeConfig JSON + "Apply changes" restarts the editor
+- [ ] Editing beeConfig JSON + "Apply changes" updates the editor dynamically
 - [ ] "Reset" button restores default configuration
 
 ---
 
 ## Deployment
 
-### Docker (Backend Only)
+### Frontend (S3)
+
+```bash
+# Build with backend URL baked in
+VITE_BACKEND_URL=https://your-backend-url npm run build
+
+# Deploy to S3 (injects Matomo tracking, then syncs dist/)
+S3_BUCKET=your-bucket-name ./scripts/deploy-frontend.sh
+```
+
+### Backend (Docker / ECS)
 
 ```bash
 docker build -f docker/Dockerfile.backend -t playground-backend .
 docker run -p 3001:3001 --env-file .env playground-backend
 ```
 
+For ECS, set `BEE_CLIENT_ID`, `BEE_CLIENT_SECRET`, `ALLOWED_ORIGINS`, and optionally `HTML_IMPORTER_API_KEY` in the task definition (via environment variables or AWS Secrets Manager).
+
 ---
 
 ## How It Works
+
+### Authentication
+1. Frontend calls `/proxy/bee-auth` with a user ID
+2. Backend proxies the request to `auth.getbee.io/loginV2` with SDK credentials
+3. Token is returned to the frontend and passed to the `<Builder>` component
 
 ### Template Loading
 1. App loads and auto-selects the initial template
 2. User selects a different template from the dropdown
 3. Template JSON is fetched from `/templates/{id}.json`
-4. `BeefreeEditor` normalizes the JSON and loads it into the SDK
+4. `BeefreeEditor` normalizes the JSON and calls `load()` from the `useBuilder` hook
 
 ### Export Flow
 1. User clicks Export and selects a format
@@ -223,16 +258,17 @@ docker run -p 3001:3001 --env-file .env playground-backend
 3. Pre-generated static file is loaded from `/templates/exports/`
 4. Result is displayed in a modal with a download option
 
-### Configuration Toggles
-1. User toggles a switch in the template top bar
-2. The corresponding window function updates the beeConfig JSON
-3. Changes are auto-applied and the editor restarts with the new config
+### Configuration Updates
+1. User edits the beeConfig JSON in the sidebar or uses a toggle
+2. Changes are applied dynamically via `updateConfig()` from the `useBuilder` hook
+3. The builder updates in place without a full restart
 
 ---
 
 ## Resources
 
 - [Beefree SDK Documentation](https://docs.beefree.io/beefree-sdk)
+- [React Email Builder](https://github.com/BeefreeSDK/react-email-builder)
 - [SDK Configuration Reference](https://docs.beefree.io/beefree-sdk/reference/sdk-configuration)
 - [Developer Portal](https://developers.beefree.io)
 - [Support](https://devportal.beefree.io)
