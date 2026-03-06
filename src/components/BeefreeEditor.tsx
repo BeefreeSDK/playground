@@ -5,7 +5,6 @@ import { authAPI } from '../services/api';
 import type {
   TemplateData,
   BeefreeTemplateJson,
-  BeefreeConfig,
 } from '../types/beefree';
 import type { WindowWithBeefreeFunctions } from '../types/window';
 import { DEFAULT_BEE_CONFIG } from '../constants';
@@ -14,8 +13,8 @@ const CONTAINER_ID = 'beefree-react-demo';
 
 interface BeefreeEditorProps {
   selectedTemplate: TemplateData | null;
-  beeConfig?: BeefreeConfig | null;
-  onConfigChange?: (config: BeefreeConfig) => void;
+  beeConfig?: IBeeConfig | null;
+  onConfigChange?: (config: IBeeConfig) => void;
   onTemplateSelectClear?: () => void;
 }
 
@@ -100,12 +99,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
   // Push config changes to the SDK when beeConfig prop changes
   useEffect(() => {
     if (beeConfig) {
-      updateConfig({
-        ...beeConfig,
-        uid: 'demo-user',
-        container: CONTAINER_ID,
-        trackChanges: true,
-      } as Partial<IBeeConfig>);
+      void updateConfig(beeConfig)
     }
   }, [beeConfig, updateConfig]);
 
@@ -142,37 +136,34 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
   useEffect(() => {
     if (!selectedTemplate || !token) return;
 
-    const loadSelectedTemplate = async () => {
-      try {
-        setLoading(true);
-        setError('');
+    try {
+      setLoading(true);
+      setError('');
 
-        let templateData: unknown;
-        if (selectedTemplate.json_data) {
-          templateData = selectedTemplate.json_data;
-        } else if (selectedTemplate.data && typeof selectedTemplate.data === 'object') {
-          const data = selectedTemplate.data as Record<string, unknown>;
-          templateData = ('json_data' in data && data.json_data) ? data.json_data : selectedTemplate.data;
-        }
-
-        const normalized = normalizeTemplateJson(templateData);
-        if (!normalized) {
-          setError('Failed to load template: Invalid template format');
-          return;
-        }
-
-        await load(normalized as unknown as IEntityContentJson);
-        currentTemplateRef.current = normalized;
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Unknown error';
-        setError(`Failed to load template: ${msg}`);
-      } finally {
-        setLoading(false);
+      let templateData: unknown;
+      if (selectedTemplate.json_data) {
+        templateData = selectedTemplate.json_data;
+      } else if (selectedTemplate.data && typeof selectedTemplate.data === 'object') {
+        const data = selectedTemplate.data as Record<string, unknown>;
+        templateData = ('json_data' in data && data.json_data) ? data.json_data : selectedTemplate.data;
       }
-    };
 
-    loadSelectedTemplate();
+      const normalized = normalizeTemplateJson(templateData);
+      if (!normalized) {
+        setError('Failed to load template: Invalid template format');
+        return;
+      }
+
+      load(normalized as unknown as IEntityContentJson);
+      currentTemplateRef.current = normalized;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Failed to load template: ${msg}`);
+    } finally {
+      setLoading(false);
+    }
   }, [selectedTemplate?.id, token, load]);
+
 
   return (
     <div className="editor-container">
@@ -194,7 +185,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         </div>
       )}
 
-      {token && (
+      {token && !loading && (
         <Builder
           id={CONTAINER_ID}
           token={token}
@@ -214,7 +205,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         />
       )}
 
-      {!token && !loading && (
+      {token && loading && (
         <div className="editor-placeholder">
           No-code email builder loading...
         </div>

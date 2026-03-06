@@ -5,9 +5,9 @@ import BeeConfigSidebar from './components/BeeConfigSidebar';
 import ExportDropdown from './components/ExportDropdown';
 import HtmlImportModal from './components/HtmlImportModal';
 import ExportResultModal from './components/ExportResultModal';
-import { useState, useEffect } from 'react';
-import type { TemplateData, BeefreeTemplateJson, BeefreeConfig } from './types';
-import type { WindowWithBeefreeFunctions } from './types/window';
+import {useState, useEffect} from 'react';
+import type {TemplateData, BeefreeTemplateJson, BeefreeConfig} from './types';
+import type {WindowWithBeefreeFunctions} from './types/window';
 import {
   loadTemplateHtml,
   loadTemplatePlainText,
@@ -15,11 +15,12 @@ import {
   getTemplateImageUrl,
   loadTemplate
 } from './services/localTemplates';
-import { INITIAL_TEMPLATE_ID, API_ENDPOINTS } from './constants';
+import {INITIAL_TEMPLATE_ID, API_ENDPOINTS} from './constants';
+import {IBeeConfig} from "@beefree.io/react-email-builder";
 
 /**
  * Main Application Component
- * 
+ *
  * This is the root component that orchestrates:
  * - Template selection and loading
  * - Beefree SDK editor initialization
@@ -31,8 +32,8 @@ import { INITIAL_TEMPLATE_ID, API_ENDPOINTS } from './constants';
 function App() {
   // Template state
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateData | null>(null); // Currently selected template from catalog
-  const [beeConfig, setBeeConfig] = useState<BeefreeConfig | null>(null); // Current Beefree SDK configuration
-  
+  const [beeConfig, setBeeConfig] = useState<IBeeConfig | null>(null); // Current Beefree SDK configuration
+
   // Export modal states
   const [exportModalOpen, setExportModalOpen] = useState(false); // Controls export modal visibility
   const [exportType, setExportType] = useState<'html' | 'plain-text' | 'pdf' | 'image' | null>(null); // Type of export being performed
@@ -42,7 +43,13 @@ function App() {
   const [exportLoading, setExportLoading] = useState(false); // Loading state for export operations
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({}); // Loading states for different operations
   const [error, setError] = useState<string>(''); // Global error message
-  
+  const [showEditor, setShowEditor] = useState<boolean>(true);
+
+  const refreshEditor = () => {
+    setShowEditor(false)
+    setTimeout(() => setShowEditor(true), 500)
+  }
+
   // Import modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false); // Controls HTML import modal visibility
 
@@ -62,7 +69,7 @@ function App() {
           display_name: templateData.display_name || templateData.name,
           title: templateData.title,
           json_data: templateData.json_data as BeefreeTemplateJson | undefined,
-          data: { templateId: templateData.id }
+          data: {templateId: templateData.id}
         });
       } catch {
         // Initial template load failed silently
@@ -84,7 +91,7 @@ function App() {
    * Prevents template from reloading when component re-renders
    */
   const handleTemplateSelectClear = () => {
-      setSelectedTemplate(null);
+    setSelectedTemplate(null);
   };
 
   /**
@@ -111,6 +118,7 @@ function App() {
     const win = window as WindowWithBeefreeFunctions;
     if (win.toggleCustomCss) {
       win.toggleCustomCss(enabled);
+      refreshEditor()
     }
   };
 
@@ -137,7 +145,7 @@ function App() {
   };
 
   const setLoadingState = (key: string, value: boolean) => {
-    setLoading(prev => ({ ...prev, [key]: value }));
+    setLoading(prev => ({...prev, [key]: value}));
   };
 
   /**
@@ -155,7 +163,7 @@ function App() {
    * Loads pre-generated static files (no API call, no user edits included)
    * WARNING: This exports the original template, not any changes the user made
    */
-  const handleExport = async <T,>(
+  const handleExport = async <T, >(
     exportType: 'html' | 'plain-text' | 'pdf' | 'image',
     loadingStateKey: 'html' | 'plainText' | 'pdf' | 'image',
     loaderFn: (templateId: string) => Promise<T> | T,
@@ -246,12 +254,12 @@ function App() {
     try {
       const response = await fetch(API_ENDPOINTS.HTML_IMPORTER, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html }),
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({html}),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to import HTML' }));
+        const errorData = await response.json().catch(() => ({error: 'Failed to import HTML'}));
         throw new Error(errorData.error || 'Failed to import HTML');
       }
 
@@ -278,21 +286,21 @@ function App() {
       <header className="playground-header">
         <div className="header-content">
           <div className="header-left">
-            <img 
-              src="https://d15k2d11r6t6rl.cloudfront.net/pub/bfra/bs0kfqbg/tqu/rwx/rj4/Logo%20version%3DColored%2C%20Name%3DOn.svg" 
-              alt="Beefree SDK" 
+            <img
+              src="https://d15k2d11r6t6rl.cloudfront.net/pub/bfra/bs0kfqbg/tqu/rwx/rj4/Logo%20version%3DColored%2C%20Name%3DOn.svg"
+              alt="Beefree SDK"
               className="logo"
             />
             <h1 className="playground-title">Playground</h1>
           </div>
           <div className="header-right">
-            <button 
+            <button
               onClick={() => setIsImportModalOpen(true)}
               className="btn-secondary"
             >
               Import HTML
             </button>
-            <ExportDropdown 
+            <ExportDropdown
               onExportHtml={handleGetHtml}
               onExportPlainText={handleGetPlainText}
               onExportImage={handleGetImage}
@@ -301,23 +309,23 @@ function App() {
             />
             <a
               href="https://developers.beefree.io/signup?utm_source=sdk&utm_medium=internal&utm_campaign=sdkplayground&utm_content=signup"
-              target="_blank" 
+              target="_blank"
               rel="noreferrer"
               className="btn-secondary"
             >
               Create an account
             </a>
-            <a 
-              href="https://developers.beefree.io/book-a-demo?utm_source=sdk&utm_medium=internal&utm_campaign=sdkplayground&utm_content=book-a-demo" 
-              target="_blank" 
+            <a
+              href="https://developers.beefree.io/book-a-demo?utm_source=sdk&utm_medium=internal&utm_campaign=sdkplayground&utm_content=book-a-demo"
+              target="_blank"
               rel="noreferrer"
               className="btn-secondary"
             >
               Book a demo
             </a>
-            <a 
-              href="https://docs.beefree.io/beefree-sdk?utm_source=sdk&utm_medium=internal&utm_campaign=sdkplayground&utm_content=documentation" 
-              target="_blank" 
+            <a
+              href="https://docs.beefree.io/beefree-sdk?utm_source=sdk&utm_medium=internal&utm_campaign=sdkplayground&utm_content=documentation"
+              target="_blank"
               rel="noreferrer"
               className="btn-secondary"
             >
@@ -327,7 +335,7 @@ function App() {
         </div>
       </header>
 
-      <TemplateTopBar 
+      <TemplateTopBar
         onTemplateSelect={handleTemplateSelect}
         selectedTemplate={selectedTemplate}
         onCustomCssToggle={handleCustomCssToggle}
@@ -341,11 +349,11 @@ function App() {
           <button onClick={() => setError('')} className="error-close">×</button>
         </div>
       )}
-      
+
       <div className="main-content">
         {/* Left Panel - BeeConfig Editor */}
         <div className="config-sidebar">
-          <BeeConfigSidebar 
+          <BeeConfigSidebar
             onConfigChange={handleConfigChange}
             currentConfig={beeConfig}
           />
@@ -353,24 +361,28 @@ function App() {
 
         {/* Center Panel - Beefree Editor */}
         <div className="editor-container-full">
-          <BeefreeEditor
-            selectedTemplate={selectedTemplate}
-            beeConfig={beeConfig}
-            onConfigChange={handleBeeConfigUpdate}
-            onTemplateSelectClear={handleTemplateSelectClear}
-          />
+          {showEditor
+            ? (
+              <BeefreeEditor
+                selectedTemplate={selectedTemplate}
+                beeConfig={beeConfig}
+                onConfigChange={handleBeeConfigUpdate}
+                onTemplateSelectClear={handleTemplateSelectClear}
+              />
+            )
+            : null}
         </div>
       </div>
 
       {/* HTML Import Modal */}
-      <HtmlImportModal 
+      <HtmlImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImport={handleHtmlImport}
       />
 
       {/* Export Result Modal */}
-      <ExportResultModal 
+      <ExportResultModal
         isOpen={exportModalOpen}
         onClose={handleCloseExportModal}
         type={exportType}

@@ -1,6 +1,6 @@
 /**
  * Beefree SDK Type Definitions
- * 
+ *
  * Proper TypeScript types to replace 'any' usage throughout the codebase
  */
 
@@ -52,22 +52,6 @@ export interface BeefreeModule {
   type: string;
   descriptor?: Record<string, unknown>;
   style?: Record<string, string>;
-}
-
-/**
- * Beefree SDK Configuration
- */
-export interface BeefreeConfig {
-  container: string;
-  language?: string;
-  sidebarPosition?: 'left' | 'right';
-  trackChanges?: boolean;
-  customCss?: string;
-  modulesGroups?: ModuleGroup[];
-  rowDisplayConditions?: DisplayCondition[];
-  rowsConfiguration?: RowsConfiguration;
-  mergeTags?: MergeTag[];
-  [key: string]: unknown; // Allow additional config properties
 }
 
 /**
