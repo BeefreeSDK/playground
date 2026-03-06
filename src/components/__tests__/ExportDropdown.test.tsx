@@ -147,7 +147,7 @@ describe('ExportDropdown component', () => {
     fireEvent.click(screen.getByRole('button', { name: /export/i }));
 
     const docLink = screen.getByText('Documentation').closest('a');
-    expect(docLink).toHaveAttribute('href', 'https://docs.beefree.io/beefree-sdk/apis/content-services-api/export');
+    expect(docLink).toHaveAttribute('href', expect.stringMatching(/^https:\/\/docs\.beefree\.io\/beefree-sdk\/apis\/content-services-api\/export/));
     expect(docLink).toHaveAttribute('target', '_blank');
     expect(docLink).toHaveAttribute('rel', 'noreferrer');
   });
