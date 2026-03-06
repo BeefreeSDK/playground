@@ -47,7 +47,7 @@ function App() {
 
   const refreshEditor = () => {
     setShowEditor(false)
-    setTimeout(() => setShowEditor(true), 500)
+    setTimeout(() => setShowEditor(true), 0)
   }
 
   // Import modal state
@@ -99,11 +99,7 @@ function App() {
    */
   const handleConfigChange = async (newConfig: BeefreeConfig) => {
     setBeeConfig(newConfig);
-    // Trigger editor restart with new configuration
-    const win = window as WindowWithBeefreeFunctions;
-    if (win.restartEditor) {
-      win.restartEditor();
-    }
+    // refreshEditor();
   };
 
   const handleBeeConfigUpdate = (config: BeefreeConfig) => {

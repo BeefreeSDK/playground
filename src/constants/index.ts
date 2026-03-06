@@ -1,8 +1,8 @@
-import type { BeefreeConfig } from '../types/beefree';
+import { IBeeConfig } from "@beefree.io/react-email-builder";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
-export const DEFAULT_BEE_CONFIG: BeefreeConfig = {
+export const DEFAULT_BEE_CONFIG: IBeeConfig = {
   container: 'beefree-react-demo',
   language: 'en-US',
   sidebarPosition: 'left',
@@ -14,6 +14,7 @@ export const DEFAULT_BEE_CONFIG: BeefreeConfig = {
       description: 'Only new client will see this',
       before: '{% if lastOrder.catalog == "New" %}',
       after: '{% endif %}',
+      isActive: true,
     },
   ],
   rowsConfiguration: {
