@@ -19,6 +19,8 @@ export const DEFAULT_BEE_CONFIG: IBeeConfig = {
     },
   ],
   rowsConfiguration: {
+    defaultRows: true,
+    emptyRows: true,
     externalContentURLs: [
       {
         name: 'External resource',

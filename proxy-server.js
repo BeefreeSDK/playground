@@ -67,7 +67,7 @@ app.get('/api/customrows', (_req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   res.setHeader('Cache-Control', 'public, max-age=3600');
-  res.sendFile(path.join(__dirname, 'public/assets/custom-rows.json'));
+  res.sendFile('public/assets/custom-rows.json');
 });
 
 // Healthcheck
