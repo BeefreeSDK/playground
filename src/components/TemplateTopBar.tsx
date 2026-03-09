@@ -4,12 +4,12 @@ import type { TemplateData, BeefreeTemplateJson } from '../types';
 
 /**
  * TemplateTopBar Component
- * 
+ *
  * This component provides:
  * - Template dropdown to select from Template Catalog
  * - Custom CSS toggle to inject external CSS into the builder
  * - Template selection and loading logic
- * 
+ *
  * Features:
  * - Fetches 10 templates on mount
  * - Handles both immediate and lazy loading of template data
@@ -25,8 +25,8 @@ interface TemplateTopBarProps {
   onGroupContentTilesToggle?: (enabled: boolean) => void;
 }
 
-const TemplateTopBar: React.FC<TemplateTopBarProps> = ({ 
-  onTemplateSelect, 
+const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
+  onTemplateSelect,
   selectedTemplate,
   onCustomCssToggle,
   onMoveSidebarToggle,
@@ -86,12 +86,12 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
   const handleCustomCssToggle = () => {
     const newValue = !customCssEnabled;
     setCustomCssEnabled(newValue);
-      
+
     // Notify parent component (App.tsx) which calls window.toggleCustomCss
     if (onCustomCssToggle) {
       onCustomCssToggle(newValue);
     }
-    
+
     // Show success message temporarily when enabling CSS
     if (newValue) {
       setShowCssMessage(true);
@@ -110,7 +110,7 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
   const handleMoveSidebarToggle = () => {
     const newValue = !moveSidebarEnabled;
     setMoveSidebarEnabled(newValue);
-      
+
     // Notify parent component (App.tsx) which calls window.toggleMoveSidebar
     if (onMoveSidebarToggle) {
       onMoveSidebarToggle(newValue);
@@ -126,7 +126,7 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
   const handleGroupContentTilesToggle = () => {
     const newValue = !groupContentTilesEnabled;
     setGroupContentTilesEnabled(newValue);
-      
+
     // Notify parent component (App.tsx) which calls window.toggleGroupContentTiles
     if (onGroupContentTilesToggle) {
       onGroupContentTilesToggle(newValue);
@@ -189,8 +189,8 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
 
         <div className="custom-css-toggle-container">
           <label className="toggle-switch">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={customCssEnabled}
               onChange={handleCustomCssToggle}
             />
@@ -206,8 +206,8 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
 
         <div className="custom-css-toggle-container">
           <label className="toggle-switch">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={moveSidebarEnabled}
               onChange={handleMoveSidebarToggle}
             />
@@ -218,8 +218,8 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
 
         <div className="custom-css-toggle-container">
           <label className="toggle-switch">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={groupContentTilesEnabled}
               onChange={handleGroupContentTilesToggle}
             />
@@ -238,7 +238,7 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
       {error && (
         <div className="top-bar-error">
           <span>{error}</span>
-          <button 
+          <button
             onClick={() => setError('')}
             className="error-close"
           >

@@ -1,12 +1,13 @@
 import { IBeeConfig } from "@beefree.io/react-email-builder";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
+const CONTAINER_ID = 'beefree-react-demo';
 
 export const DEFAULT_BEE_CONFIG: IBeeConfig = {
-  container: 'beefree-react-demo',
+  container: CONTAINER_ID,
   language: 'en-US',
   sidebarPosition: 'left',
-  trackChanges: true,
+  uid: 'demo-user',
   rowDisplayConditions: [
     {
       type: 'Last ordered catalog',
@@ -21,8 +22,13 @@ export const DEFAULT_BEE_CONFIG: IBeeConfig = {
     externalContentURLs: [
       {
         name: 'External resource',
-        value: `${BACKEND_URL || window.location.origin}/api/customrows`,
+        handle: 'external-rows',
+        isLocal: true,
       },
+      {
+        name: 'Public External resource',
+        value: 'https://your-public-rows.endpoint',
+      }
     ],
   },
   mergeTags: [

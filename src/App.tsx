@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import './App.css';
 import TemplateTopBar from './components/TemplateTopBar';
 import BeefreeEditor from './components/BeefreeEditor';
@@ -6,17 +6,17 @@ import BeeConfigSidebar from './components/BeeConfigSidebar';
 import ExportDropdown from './components/ExportDropdown';
 import HtmlImportModal from './components/HtmlImportModal';
 import ExportResultModal from './components/ExportResultModal';
-import type { TemplateData, BeefreeTemplateJson } from './types';
+import type {BeefreeTemplateJson, TemplateData} from './types';
 import type {WindowWithBeefreeFunctions} from './types/window';
 import {
-  loadTemplateHtml,
-  loadTemplatePlainText,
-  getTemplatePdfUrl,
   getTemplateImageUrl,
-  loadTemplate
+  getTemplatePdfUrl,
+  loadTemplate,
+  loadTemplateHtml,
+  loadTemplatePlainText
 } from './services/localTemplates';
-import {INITIAL_TEMPLATE_ID, API_ENDPOINTS} from './constants';
-import {IBeeConfig} from "@beefree.io/react-email-builder";
+import {API_ENDPOINTS, DEFAULT_BEE_CONFIG, INITIAL_TEMPLATE_ID} from './constants';
+import {IBeeConfig, IPluginRow} from "@beefree.io/react-email-builder";
 
 /**
  * Main Application Component
@@ -32,7 +32,33 @@ import {IBeeConfig} from "@beefree.io/react-email-builder";
 function App() {
   // Template state
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateData | null>(null); // Currently selected template from catalog
-  const [beeConfig, setBeeConfig] = useState<IBeeConfig | null>(null); // Current Beefree SDK configuration
+
+  const initialConfig: IBeeConfig = useMemo(() => ({
+    ...DEFAULT_BEE_CONFIG,
+    hooks: {
+      getRows: {
+        label: 'Rows',
+        handler: async (resolve, reject, args) => {
+          if (args.handle === 'external-rows') {// from `externalContentURLs`
+            const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
+
+            try {
+              const fetchedRows: Response = await fetch(`${BACKEND_URL || window.location.origin}/api/customrows`);
+              const rows = (await fetchedRows.json()) as IPluginRow[];
+              resolve(rows);
+            } catch (error) {
+              console.error(error);
+              reject();
+            }
+          } else {
+            resolve([])
+          }
+        }
+      }
+    }
+  }), [])
+
+  const [beeConfig, setBeeConfig] = useState<IBeeConfig>(initialConfig); // Current Beefree SDK configuration
 
   // Export modal states
   const [exportModalOpen, setExportModalOpen] = useState(false); // Controls export modal visibility
@@ -87,14 +113,6 @@ function App() {
   };
 
   /**
-   * Clear selected template after loading
-   * Prevents template from reloading when component re-renders
-   */
-  const handleTemplateSelectClear = () => {
-    setSelectedTemplate(null);
-  };
-
-  /**
    * BeeConfig Management Handlers
    */
   const handleConfigChange = async (newConfig: IBeeConfig) => {
@@ -103,10 +121,6 @@ function App() {
     if (newConfig.customCss !== beeConfig?.customCss) {
       refreshEditor();
     }
-  };
-
-  const handleBeeConfigUpdate = (config: IBeeConfig) => {
-    setBeeConfig(config);
   };
 
   /**
@@ -364,8 +378,6 @@ function App() {
               <BeefreeEditor
                 selectedTemplate={selectedTemplate}
                 beeConfig={beeConfig}
-                onConfigChange={handleBeeConfigUpdate}
-                onTemplateSelectClear={handleTemplateSelectClear}
               />
             )
             : null}

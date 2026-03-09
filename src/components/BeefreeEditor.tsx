@@ -7,15 +7,10 @@ import type {
   BeefreeTemplateJson,
 } from '../types/beefree';
 import type { WindowWithBeefreeFunctions } from '../types/window';
-import { DEFAULT_BEE_CONFIG } from '../constants';
-
-const CONTAINER_ID = 'beefree-react-demo';
 
 interface BeefreeEditorProps {
   selectedTemplate: TemplateData | null;
-  beeConfig?: IBeeConfig | null;
-  onConfigChange?: (config: IBeeConfig) => void;
-  onTemplateSelectClear?: () => void;
+  beeConfig: IBeeConfig;
 }
 
 /**
@@ -47,25 +42,17 @@ const normalizeTemplateJson = (input: unknown): BeefreeTemplateJson | null => {
   return null;
 };
 
-const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
+const BeefreeEditor = ({
   selectedTemplate,
   beeConfig,
-  onConfigChange,
-}) => {
+}: BeefreeEditorProps) => {
   const [token, setToken] = useState<IToken | null>(null);
   const [initialTemplate, setInitialTemplate] = useState<IEntityContentJson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const currentTemplateRef = useRef<BeefreeTemplateJson | null>(null);
 
-  const config = beeConfig || DEFAULT_BEE_CONFIG;
-
-  const { load, updateConfig } = useBuilder({
-    ...config,
-    uid: 'demo-user',
-    container: CONTAINER_ID,
-    trackChanges: true,
-  } as IBeeConfig);
+  const { load, updateConfig } = useBuilder(beeConfig);
 
   // Fetch token and initial template on mount
   useEffect(() => {
@@ -114,7 +101,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         return;
       }
       try {
-        await load(normalized as unknown as IEntityContentJson);
+        load(normalized as unknown as IEntityContentJson);
         currentTemplateRef.current = normalized;
         setError('');
       } catch (err: unknown) {
@@ -123,14 +110,14 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
     };
 
     win.restartEditor = () => {
-      updateConfig({ language: config.language || 'en-US' });
+      updateConfig({ language: beeConfig.language || 'en-US' });
     };
 
     return () => {
       delete win.restartEditor;
       delete win.loadTemplate;
     };
-  }, [load, updateConfig, config]);
+  }, [load, updateConfig, beeConfig]);
 
   // Load template when selected from Template Catalog
   useEffect(() => {
@@ -187,7 +174,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
 
       {token && !loading && (
         <Builder
-          id={CONTAINER_ID}
+          id={beeConfig.container}
           token={token}
           template={(initialTemplate || { page: {} }) as IEntityContentJson}
           onSave={(json: string) => {
@@ -197,11 +184,6 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
             currentTemplateRef.current = typeof json === 'string' ? JSON.parse(json) : json;
           }}
           onError={(err) => setError(`Editor error: ${err.message}`)}
-          onLoad={() => {
-            if (onConfigChange && !beeConfig) {
-              onConfigChange(DEFAULT_BEE_CONFIG);
-            }
-          }}
         />
       )}
 
