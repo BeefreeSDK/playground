@@ -46,9 +46,7 @@ const BeeConfigSidebar: React.FC<BeeConfigSidebarProps> = ({ onConfigChange, cur
         const currentConfig: IBeeConfig = configText ? JSON.parse(configText) : { container: 'beefree-react-demo' };
 
         if (enabled) {
-          // Serve via proxy server which sets Access-Control-Allow-Origin: *
-          // so the Beefree SDK iframe (on a different origin) can load it
-          currentConfig.customCss = `${window.location.origin}/assets/css/beefree-custom-design.css`;
+          currentConfig.customCss = `https://playground.beefree.io/assets/css/beefree-custom-design.css`;
         } else {
           // Remove customCss from config
           delete currentConfig.customCss;

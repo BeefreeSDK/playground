@@ -99,7 +99,10 @@ function App() {
    */
   const handleConfigChange = async (newConfig: BeefreeConfig) => {
     setBeeConfig(newConfig);
-    // refreshEditor();
+
+    if (newConfig.customCss !== beeConfig?.customCss) {
+      refreshEditor();
+    }
   };
 
   const handleBeeConfigUpdate = (config: BeefreeConfig) => {
@@ -114,7 +117,6 @@ function App() {
     const win = window as WindowWithBeefreeFunctions;
     if (win.toggleCustomCss) {
       win.toggleCustomCss(enabled);
-      refreshEditor()
     }
   };
 
