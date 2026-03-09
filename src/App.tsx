@@ -1,3 +1,4 @@
+import {useState, useEffect} from 'react';
 import './App.css';
 import TemplateTopBar from './components/TemplateTopBar';
 import BeefreeEditor from './components/BeefreeEditor';
@@ -5,8 +6,7 @@ import BeeConfigSidebar from './components/BeeConfigSidebar';
 import ExportDropdown from './components/ExportDropdown';
 import HtmlImportModal from './components/HtmlImportModal';
 import ExportResultModal from './components/ExportResultModal';
-import {useState, useEffect} from 'react';
-import type {TemplateData, BeefreeTemplateJson, BeefreeConfig} from './types';
+import type { TemplateData, BeefreeTemplateJson } from './types';
 import type {WindowWithBeefreeFunctions} from './types/window';
 import {
   loadTemplateHtml,
@@ -97,7 +97,7 @@ function App() {
   /**
    * BeeConfig Management Handlers
    */
-  const handleConfigChange = async (newConfig: BeefreeConfig) => {
+  const handleConfigChange = async (newConfig: IBeeConfig) => {
     setBeeConfig(newConfig);
 
     if (newConfig.customCss !== beeConfig?.customCss) {
@@ -105,7 +105,7 @@ function App() {
     }
   };
 
-  const handleBeeConfigUpdate = (config: BeefreeConfig) => {
+  const handleBeeConfigUpdate = (config: IBeeConfig) => {
     setBeeConfig(config);
   };
 
