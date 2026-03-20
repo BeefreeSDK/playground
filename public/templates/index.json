@@ -1,0 +1,105 @@
+{
+  "templates": [
+    {
+      "id": "beefree-sdk-demo-template",
+      "name": "Beefree SDK Demo Template",
+      "files": {
+        "json": "beefree-sdk-demo-template.json",
+        "html": "exports/beefree-sdk-demo-template.html",
+        "text": "exports/beefree-sdk-demo-template.txt",
+        "pdf": "exports/beefree-sdk-demo-template.pdf",
+        "image": "exports/beefree-sdk-demo-template.png"
+      }
+    },
+    {
+      "id": "thanksgiving-travel",
+      "name": "Thanksgiving Travel",
+      "files": {
+        "json": "thanksgiving-travel.json",
+        "html": "exports/thanksgiving-travel.html",
+        "text": "exports/thanksgiving-travel.txt",
+        "pdf": "exports/thanksgiving-travel.pdf",
+        "image": "exports/thanksgiving-travel.png"
+      }
+    },
+    {
+      "id": "kids-fall-collection",
+      "name": "Kids Fall Collection",
+      "files": {
+        "json": "kids-fall-collection.json",
+        "html": "exports/kids-fall-collection.html",
+        "text": "exports/kids-fall-collection.txt",
+        "pdf": "exports/kids-fall-collection.pdf",
+        "image": "exports/kids-fall-collection.png"
+      }
+    },
+    {
+      "id": "bring-your-app-to-life-email",
+      "name": "Bring Your App to Life: Email",
+      "files": {
+        "json": "bring-your-app-to-life-email.json",
+        "html": "exports/bring-your-app-to-life-email.html",
+        "text": "exports/bring-your-app-to-life-email.txt",
+        "pdf": "exports/bring-your-app-to-life-email.pdf",
+        "image": "exports/bring-your-app-to-life-email.png"
+      }
+    },
+    {
+      "id": "fall-in-love-with-this-seasons-collection",
+      "name": "FALL in love with this season's collection!",
+      "files": {
+        "json": "fall-in-love-with-this-seasons-collection.json",
+        "html": "exports/fall-in-love-with-this-seasons-collection.html",
+        "text": "exports/fall-in-love-with-this-seasons-collection.txt",
+        "pdf": "exports/fall-in-love-with-this-seasons-collection.pdf",
+        "image": "exports/fall-in-love-with-this-seasons-collection.png"
+      }
+    },
+    {
+      "id": "our-monthly-impact-email",
+      "name": "Our Monthly Impact Event: Email",
+      "files": {
+        "json": "our-monthly-impact-email.json",
+        "html": "exports/our-monthly-impact-email.html",
+        "text": "exports/our-monthly-impact-email.txt",
+        "pdf": "exports/our-monthly-impact-email.pdf",
+        "image": "exports/our-monthly-impact-email.png"
+      }
+    },
+    {
+      "id": "the-ultimate-guide-to-a-stress-free-thanksgiving",
+      "name": "The ultimate guide to a stress-free Thanksgiving",
+      "files": {
+        "json": "the-ultimate-guide-to-a-stress-free-thanksgiving.json",
+        "html": "exports/the-ultimate-guide-to-a-stress-free-thanksgiving.html",
+        "text": "exports/the-ultimate-guide-to-a-stress-free-thanksgiving.txt",
+        "pdf": "exports/the-ultimate-guide-to-a-stress-free-thanksgiving.pdf",
+        "image": "exports/the-ultimate-guide-to-a-stress-free-thanksgiving.png"
+      }
+    },
+    {
+      "id": "volunteer-for-mentoring-program-email",
+      "name": "Volunteer for Mentoring Program: Email",
+      "files": {
+        "json": "volunteer-for-mentoring-program-email.json",
+        "html": "exports/volunteer-for-mentoring-program-email.html",
+        "text": "exports/volunteer-for-mentoring-program-email.txt",
+        "pdf": "exports/volunteer-for-mentoring-program-email.pdf",
+        "image": "exports/volunteer-for-mentoring-program-email.png"
+      }
+    },
+    {
+      "id": "black-friday-watch-sale",
+      "name": "Black Friday Watch Sale",
+      "files": {
+        "json": "black-friday-watch-sale.json",
+        "html": "exports/black-friday-watch-sale.html",
+        "text": "exports/black-friday-watch-sale.txt",
+        "pdf": "exports/black-friday-watch-sale.pdf",
+        "image": "exports/black-friday-watch-sale.png"
+      }
+    }
+  ],
+  "total": 9,
+  "exported_at": "2025-12-17T09:55:08.185Z"
+}

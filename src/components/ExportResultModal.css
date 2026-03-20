@@ -1,0 +1,139 @@
+.export-modal {
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.export-modal .modal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.export-text-content {
+  height: 100%;
+}
+
+.export-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  padding: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  resize: vertical;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.export-textarea:focus {
+  outline: none;
+  border-color: var(--beefree-purple);
+  background-color: var(--bg-primary);
+}
+
+.export-image-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.export-thumbnail {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: var(--shadow-md);
+}
+
+.export-pdf-content {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.export-pdf-content p {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+}
+
+.pdf-open-link {
+  display: inline-block;
+  padding: 12px 24px;
+  background-color: var(--beefree-purple);
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.pdf-open-link:hover {
+  background-color: var(--beefree-purple-dark);
+}
+
+.export-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  min-height: 300px;
+}
+
+.loading-spinner-large {
+  font-size: 48px;
+  animation: spin 1s linear infinite;
+  color: var(--beefree-purple);
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.export-loading p {
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.export-confirm-modal {
+  max-width: 480px;
+  width: 90%;
+}
+
+.export-confirm-modal .modal-body {
+  padding: 24px;
+}
+
+.export-confirm-modal .modal-body p {
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0 0 8px;
+}
+
+.export-confirm-modal .modal-body p:last-child {
+  margin-bottom: 0;
+  margin-top: 16px;
+  color: var(--text-secondary);
+}
+
